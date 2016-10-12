@@ -1,0 +1,1 @@
+from .signals import models_register
