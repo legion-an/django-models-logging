@@ -28,7 +28,7 @@ CAN_CHANGE_CHANGES = getattr(settings, 'LOGGING_CAN_CHANGE_CHANGES', False)
 class HistoryAdmin(admin.ModelAdmin):
     object_history_template = "models_logging/object_history.html"
     history_latest_first = False
-    inlines_models_history = '__all__'
+    inline_models_history = '__all__'
 
     def __init__(self, *args, **kwargs):
         super(HistoryAdmin, self).__init__(*args, **kwargs)
@@ -186,8 +186,9 @@ class RevisionAdmin(admin.ModelAdmin):
         return REVERT_IS_ALLOWED(request, obj) if callable(REVERT_IS_ALLOWED) else REVERT_IS_ALLOWED
 
     def changes(self, obj):
-        return format_html(', '.join('<a href="%s">%s</a>' % (i.get_absolute_url(), i.id)
-                                     for i in obj.changes_set.all()))
+        changes = [i for i in obj.changes_set.all()]
+        changes_string = ', '.join('<a href="%s">%s</a>' % (i.get_absolute_url(), i.id) for i in changes[:100])
+        return format_html(changes_string + '...' if len(changes) > 100 else changes_string)
 
     def get_urls(self):
         def wrap(view):
