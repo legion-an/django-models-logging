@@ -67,10 +67,20 @@ class Changes(models.Model):
         return "Changes %s of %s <%s>" % (self.id, self.object_repr, self.date_created.strftime('%Y-%m-%d %H:%M:%S.%f'))
 
     @staticmethod
-    def get_changes_by_obj(model, obj_id):
+    def get_changes_by_obj(model, obj_id, related_objects='__all__'):
+        """
+        get changes of object by model and obj
+        :param model: class of models.Model
+        :param obj_id: pk
+        :param related_objects: can be "__all__" or list of models, if __all__ take changes of related objects to model
+        :return: queryset of Changes
+        """
+
         obj = model.objects.get(pk=obj_id)
         history_objects = {ContentType.objects.get_for_model(model).id: [obj_id]}
-        for rel_model in model._meta.related_objects:
+        if related_objects == '__all__':
+            related_objects = model._meta.related_objects
+        for rel_model in related_objects:
             if type(rel_model.field) == models.OneToOneField:
                 try:
                     values = [getattr(obj, rel_model.get_accessor_name()).pk]

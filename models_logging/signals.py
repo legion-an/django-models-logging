@@ -38,7 +38,7 @@ def save_model(sender, instance, using, **kwargs):
         action = 'Added' if kwargs.get('created') else 'Changed'
         comment = '%(action)s %(klass)s %(repr)s:\n' % {'klass': sender.__name__, 'repr': force_text(instance),
                                                         'action': action}
-        comment += '\n'.join('field "%s" (%s -> %s)' % (d['field'], d['values'][0], d['values'][1]) for d in diffs)
+        comment += '\n'.join('"%s" (%s -> %s)' % (d['field'], d['values'][0], d['values'][1]) for d in diffs)
         create_changes(instance, using, comment, action, _local.rev)
 
 

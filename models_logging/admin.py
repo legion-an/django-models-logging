@@ -28,13 +28,32 @@ CAN_CHANGE_CHANGES = getattr(settings, 'LOGGING_CAN_CHANGE_CHANGES', False)
 class HistoryAdmin(admin.ModelAdmin):
     object_history_template = "models_logging/object_history.html"
     history_latest_first = False
-    include_inlines_models_history = '__all__'
+    inlines_models_history = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(HistoryAdmin, self).__init__(*args, **kwargs)
+        self.rev = None
+        self.user = None
 
     def _reversion_order_version_queryset(self, queryset):
         """Applies the correct ordering to the given version queryset."""
         if not self.history_latest_first:
             queryset = queryset.order_by("pk")
         return queryset
+
+    def save_model(self, request, obj, form, change):
+        self.user = request.user
+        self.rev = Revision.objects.create(comment='Changes in admin')
+        with create_revision(self.rev, self.user):
+            super(HistoryAdmin, self).save_model(request, obj, form, change)
+
+    def save_related(self, request, form, formsets, change):
+        with create_revision(self.rev, self.user):
+            super(HistoryAdmin, self).save_related(request, form, formsets, change)
+
+    def delete_model(self, request, obj):
+        with create_revision(None, request.user):
+            super(HistoryAdmin, self).delete_model(request, obj)
 
     def history_view(self, request, object_id, extra_context=None):
         """Renders the history view."""
@@ -47,19 +66,34 @@ class HistoryAdmin(admin.ModelAdmin):
         changes_admin = False
         if Changes in admin.site._registry:
             changes_admin = True
-        context = {"changes": Changes.get_changes_by_obj(self.model, object_id), 'changes_admin': changes_admin}
+
+        if self.inline_models_history == '__all__':
+            self.inline_models_history = self.inlines
+        related_objects = [m for m in self.model._meta.related_objects
+                           if m.related_model in [i.model for i in self.inline_models_history]]
+        context = {"changes": Changes.get_changes_by_obj(self.model, object_id, related_objects=related_objects),
+                   'changes_admin': changes_admin}
         context.update(extra_context or {})
         return super(HistoryAdmin, self).history_view(request, object_id, context)
 
 
 class ChangesAdmin(admin.ModelAdmin):
-    list_display = ['date_created', 'content_type', 'get_comment']
+    list_display = ['date_created', 'content_type', 'get_comment', 'get_link_admin_object']
     list_filter = [('content_type', RelatedOnlyFieldListFilter), 'date_created']
     change_form_template = 'models_logging/change_form.html'
     revert_form_template = 'models_logging/revert_changes_confirmation.html'
 
     def get_comment(self, obj):
         return '%s: %s' % (obj.action, obj.object_repr)
+
+    def get_link_admin_object(self, obj):
+        if obj.object and obj.content_type.model_class() in admin.site._registry:
+            return format_html('<a href="%s">%s</a>' % (
+                reverse('admin:%s_%s_change' % (obj.content_type.app_label, obj.content_type.model),
+                        args=[obj.object_id]
+                ),
+                obj.object)
+            )
 
     def has_add_permission(self, request):
         return
