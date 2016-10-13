@@ -3,7 +3,7 @@ try:
     from django.contrib.contenttypes.fields import GenericForeignKey
 except ImportError:  # Django < 1.9 pragma: no cover
     from django.contrib.contenttypes.generic import GenericForeignKey
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import python_2_unicode_compatible
@@ -13,7 +13,7 @@ from django.core.urlresolvers import reverse
 from models_logging.revisions import create_changes
 
 
-class RevertError(Exception): pass
+class NoPrevChangesError(Exception): pass
 
 
 @python_2_unicode_compatible
@@ -38,6 +38,7 @@ class Revision(models.Model):
     def revert(self):
         for i in self.changes_set.all():
             i.revert()
+
 
 
 @python_2_unicode_compatible
@@ -101,14 +102,20 @@ class Changes(models.Model):
                                           id__lt=self.id).first()
 
     def revert(self):
-        if self.action == 'Added':
-            self.object.delete()
-        elif self.action == 'Deleted':
-            obj = self.get_deleted_object()
-            obj.save()
-            create_changes(obj, 'default', 'Recover object', action='Added')
-        else:
-            self.prev_changes.object.save()
+        with transaction.atomic():
+            if self.action == 'Added':
+                self.object.delete()
+            elif self.action == 'Deleted':
+                obj = self.get_deleted_object()
+                obj.save()
+                create_changes(obj, 'default', 'Recover object', action='Added')
+            else:
+                # TODO: if not prev_changes, need parse comment and take fields that was changed
+                # and revert only this fields
+                try:
+                    self.prev_changes.object.save()
+                except AttributeError:
+                    raise NoPrevChangesError('No prev changes for this object')
 
     def get_deleted_object(self):
         return next(deserialize('json', self.serialized_data)).object

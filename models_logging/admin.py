@@ -15,7 +15,7 @@ from django.forms.models import model_to_dict
 from django.utils.html import format_html
 from django.utils.encoding import force_text
 
-from models_logging.models import Changes, Revision
+from models_logging.models import Changes, Revision, RevertError
 from models_logging.revisions import create_revision
 
 
@@ -124,8 +124,11 @@ class ChangesAdmin(admin.ModelAdmin):
                 if obj.content_type.model_class() in admin.site._registry:
                     return redirect(reverse('admin:%s_%s_delete' %
                                             (obj.content_type.app_label, obj.content_type.model), args=[obj.object_id]))
-            obj.revert()
-            messages.success(request, 'Changes of %s was reverted' % obj.object_repr)
+            try:
+                obj.revert()
+                messages.success(request, 'Changes of %s was reverted' % obj.object_repr)
+            except Exception as err:
+                messages.warning(request, 'Error: %s' % err)
             return redirect(reverse('admin:models_logging_changes_changelist'))
 
         context = {
@@ -215,9 +218,12 @@ class RevisionAdmin(admin.ModelAdmin):
 
         if request.method == 'POST':
             rev = Revision.objects.create(comment='Revert of revision %s' % obj)
-            with create_revision(rev):
-                obj.revert()
-            messages.success(request, 'Changes of %s was reverted' % force_text(obj))
+            try:
+                with create_revision(rev):
+                    obj.revert()
+                messages.success(request, 'Changes of %s was reverted' % force_text(obj))
+            except Exception as err:
+                messages.warning(request, 'Error: %s' % err)
             return redirect(reverse('admin:models_logging_revision_changelist'))
 
         context = {
