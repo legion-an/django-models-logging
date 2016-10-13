@@ -13,6 +13,7 @@ class _Local(local):
 
     def __init__(self):
         self.rev = None
+        self.user = None
 
 
 _local = _Local()

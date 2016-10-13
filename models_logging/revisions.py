@@ -10,7 +10,7 @@ def create_changes(object, using, comment, action, rev=None, user=None):
 
 
 @contextmanager
-def create_revision(rev, user=None):
+def create_revision(rev=None, user=None):
     from models_logging.signals import _local
     _local.rev = rev
     _local.user = user

@@ -32,8 +32,8 @@ class HistoryAdmin(admin.ModelAdmin):
 
     def __init__(self, *args, **kwargs):
         super(HistoryAdmin, self).__init__(*args, **kwargs)
-        self.rev = None
-        self.user = None
+        self._rev = None
+        self._user = None
 
     def _reversion_order_version_queryset(self, queryset):
         """Applies the correct ordering to the given version queryset."""
@@ -42,13 +42,13 @@ class HistoryAdmin(admin.ModelAdmin):
         return queryset
 
     def save_model(self, request, obj, form, change):
-        self.user = request.user
-        self.rev = Revision.objects.create(comment='Changes in admin')
-        with create_revision(self.rev, self.user):
+        self._user = request.user
+        self._rev = Revision.objects.create(comment='Changes in admin')
+        with create_revision(self._rev, self._user):
             super(HistoryAdmin, self).save_model(request, obj, form, change)
 
     def save_related(self, request, form, formsets, change):
-        with create_revision(self.rev, self.user):
+        with create_revision(self._rev, self._user):
             super(HistoryAdmin, self).save_related(request, form, formsets, change)
 
     def delete_model(self, request, obj):
