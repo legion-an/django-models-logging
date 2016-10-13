@@ -15,7 +15,7 @@ from django.forms.models import model_to_dict
 from django.utils.html import format_html
 from django.utils.encoding import force_text
 
-from models_logging.models import Changes, Revision, RevertError
+from models_logging.models import Changes, Revision, NoPrevChangesError
 from models_logging.revisions import create_revision
 
 
