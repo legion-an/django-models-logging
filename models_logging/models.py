@@ -32,7 +32,7 @@ class Revision(models.Model):
     def __str__(self):
         return 'Revision %s of <%s>' % (self.id, self.date_created.strftime('%Y-%m-%d %H:%M:%S.%f'))
 
-    def get_absolute_url(self):
+    def get_admin_url(self):
         return reverse('admin:models_logging_revision_change', args=[self.id])
 
     def revert(self):
@@ -60,7 +60,7 @@ class Changes(models.Model):
     serialized_data = models.TextField(blank=True, null=True,
                                        help_text=_("The serialized form of this version of the model."))
     object_repr = models.TextField(help_text=_("A string representation of the object."))
-    revision = models.ForeignKey(Revision, blank=True, null=True, verbose_name='to revision', on_delete=models.SET_NULL)
+    revision = models.ForeignKey(Revision, blank=True, null=True, verbose_name='to revision')
     action = models.CharField(_("Action"), help_text=_('added|changed|deleted'), max_length=7)
 
     def __str__(self):
@@ -95,6 +95,11 @@ class Changes(models.Model):
             qobj.add(models.Q(content_type_id=k, object_id__in=v), models.Q.OR)
         return Changes.objects.filter(qobj)
 
+    @property
+    def prev_changes(self):
+            return Changes.objects.filter(content_type_id=self.content_type_id, object_id=self.object_id,
+                                          id__lt=self.id).first()
+
     def revert(self):
         if self.action == 'Added':
             self.object.delete()
@@ -103,10 +108,10 @@ class Changes(models.Model):
             obj.save()
             create_changes(obj, 'default', 'Recover object', action='Added')
         else:
-            self.object.save()
+            self.prev_changes.object.save()
 
     def get_deleted_object(self):
         return next(deserialize('json', self.serialized_data)).object
 
-    def get_absolute_url(self):
+    def get_admin_url(self):
         return reverse('admin:models_logging_changes_change', args=[self.id])

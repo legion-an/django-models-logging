@@ -1,1 +1,1 @@
-from .signals import models_register
+default_app_config = 'models_logging.apps.LoggingConfig'

@@ -151,7 +151,7 @@ class ChangesAdmin(admin.ModelAdmin):
 
 class ChangesInline(admin.TabularInline):
     model = Changes
-    fields = ['content_type', 'object_id', 'object_repr', 'action']
+    fields = ['__str__', 'content_type', 'object_id', 'object_repr', 'action']
     readonly_fields = fields
     extra = 0
 
@@ -187,8 +187,14 @@ class RevisionAdmin(admin.ModelAdmin):
 
     def changes(self, obj):
         changes = [i for i in obj.changes_set.all()]
-        changes_string = ', '.join('<a href="%s">%s</a>' % (i.get_absolute_url(), i.id) for i in changes[:100])
+        changes_string = ', '.join('<a href="%s">%s</a>' % (i.get_admin_url(), i.id) for i in changes[:100])
         return format_html(changes_string + '...' if len(changes) > 100 else changes_string)
+
+    def get_inline_formsets(self, request, formsets, inline_instances, obj=None):
+        for formset in formsets:
+            if formset.queryset.count() > 100:
+                formset.queryset = formset.queryset[:100]
+        return super(RevisionAdmin, self).get_inline_formsets(request, formsets, inline_instances, obj)
 
     def get_urls(self):
         def wrap(view):
