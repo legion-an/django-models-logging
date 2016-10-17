@@ -79,9 +79,10 @@ class HistoryAdmin(admin.ModelAdmin):
 
 class ChangesAdmin(admin.ModelAdmin):
     list_display = ['date_created', 'content_type', 'get_comment', 'get_link_admin_object']
-    list_filter = [('content_type', RelatedOnlyFieldListFilter), 'date_created']
+    list_filter = [('content_type', RelatedOnlyFieldListFilter), 'date_created', 'action']
     change_form_template = 'models_logging/change_form.html'
     revert_form_template = 'models_logging/revert_changes_confirmation.html'
+    search_fields = ['object_id', 'id']
 
     def get_comment(self, obj):
         return '%s: %s' % (obj.action, obj.object_repr)
@@ -110,7 +111,6 @@ class ChangesAdmin(admin.ModelAdmin):
             return fields
         return fields + ['revision']
 
-    @transaction.atomic
     def revert_view(self, request, object_id, extra_context=None):
         obj = get_object_or_404(Changes, id=object_id)
         if not self.revert_is_allowed(request, obj):
@@ -127,9 +127,9 @@ class ChangesAdmin(admin.ModelAdmin):
             try:
                 obj.revert()
                 messages.success(request, 'Changes of %s was reverted' % obj.object_repr)
+                return redirect(reverse('admin:models_logging_changes_changelist'))
             except Exception as err:
                 messages.warning(request, 'Error: %s' % err)
-            return redirect(reverse('admin:models_logging_changes_changelist'))
 
         context = {
             'object': obj,

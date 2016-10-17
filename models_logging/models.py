@@ -1,9 +1,11 @@
+import json
+
 from django.contrib.contenttypes.models import ContentType
 try:
     from django.contrib.contenttypes.fields import GenericForeignKey
 except ImportError:  # Django < 1.9 pragma: no cover
     from django.contrib.contenttypes.generic import GenericForeignKey
-from django.db import models, transaction
+from django.db import models, transaction, IntegrityError
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import python_2_unicode_compatible
@@ -98,15 +100,15 @@ class Changes(models.Model):
 
     @property
     def prev_changes(self):
-            return Changes.objects.filter(content_type_id=self.content_type_id, object_id=self.object_id,
-                                          id__lt=self.id).first()
+        return Changes.objects.filter(content_type_id=self.content_type_id, object_id=self.object_id,
+                                      id__lt=self.id).first()
 
     def revert(self):
         with transaction.atomic():
             if self.action == 'Added':
                 self.object.delete()
             elif self.action == 'Deleted':
-                obj = self.get_deleted_object()
+                obj = self.get_object()
                 obj.save()
                 create_changes(obj, 'default', 'Recover object', action='Added')
             else:
@@ -117,7 +119,22 @@ class Changes(models.Model):
                 except AttributeError:
                     raise NoPrevChangesError('No prev changes for this object')
 
-    def get_deleted_object(self):
+    def set_attr(self, attr, value):
+        data = json.loads(self.serialized_data)[0]
+        if attr in data:
+            data[attr] = value
+        else:
+            data['fields'][attr] = value
+        self.serialized_data = json.dumps([data])
+        self.save()
+
+    def del_attr(self, attr):
+        data = json.loads(self.serialized_data)[0]
+        data['fields'].pop(attr, None)
+        self.serialized_data = json.dumps([data])
+        self.save()
+
+    def get_object(self):
         return next(deserialize('json', self.serialized_data)).object
 
     def get_admin_url(self):
