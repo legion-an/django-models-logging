@@ -15,7 +15,10 @@
 {% block content %}
   <p>{% blocktrans with escaped_object=object %}Are you sure you want to revert the {{ object_name }}?{% endblocktrans %}</p>
   <div>
-    <b>{% trans 'Revision contains many of changes, take a look very attentively at all changes' %}</b>
+    <b>{% trans 'Revision contains many of changes, take a look very attentively at all changes' %}<br>
+      {% trans 'Atantion! Only' %} {{ limit }} {% trans 'from' %} {{ changes_count }}
+      {% trans 'showed in this table. But reverting will be in all changes. All changes you can see in Changes admin' %}
+    </b>
     <table>
       <tr>
         <td>{% trans 'Change' %}</td>

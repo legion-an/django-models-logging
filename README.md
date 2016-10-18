@@ -47,3 +47,7 @@ LOGGING_CAN_DELETE_REVISION = can_revert
 LOGGING_CAN_DELETE_CHANGES = False
 LOGGING_CAN_CHANGE_CHANGES = True
 ```
+
+# PS: It's not a backup your database, don't try to revert "huge" Revisions
+# Recovering changes it's at least 1 hit to database (save or delete),
+# if you run recovering thousands of changes this will be very slowly

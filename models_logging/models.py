@@ -5,7 +5,7 @@ try:
     from django.contrib.contenttypes.fields import GenericForeignKey
 except ImportError:  # Django < 1.9 pragma: no cover
     from django.contrib.contenttypes.generic import GenericForeignKey
-from django.db import models, transaction, IntegrityError
+from django.db import models, transaction
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import python_2_unicode_compatible
@@ -38,9 +38,8 @@ class Revision(models.Model):
         return reverse('admin:models_logging_revision_change', args=[self.id])
 
     def revert(self):
-        for i in self.changes_set.all():
-            i.revert()
-
+        for ch in self.changes_set.all():
+            ch.revert()
 
 
 @python_2_unicode_compatible
@@ -105,7 +104,7 @@ class Changes(models.Model):
 
     def revert(self):
         with transaction.atomic():
-            if self.action == 'Added':
+            if self.action == 'Added' and self.object:
                 self.object.delete()
             elif self.action == 'Deleted':
                 obj = self.get_object()

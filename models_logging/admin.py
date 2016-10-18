@@ -23,6 +23,7 @@ REVERT_IS_ALLOWED = getattr(settings, 'LOGGING_REVERT_IS_ALLOWED', True)
 CAN_DELETE_REVISION = getattr(settings, 'LOGGING_CAN_DELETE_REVISION', False)
 CAN_DELETE_CHANGES = getattr(settings, 'LOGGING_CAN_DELETE_CHANGES', False)
 CAN_CHANGE_CHANGES = getattr(settings, 'LOGGING_CAN_CHANGE_CHANGES', False)
+CHANGES_REVISION_LIMIT = getattr(settings, 'LOGGING_CHANGES_REVISION_LIMIT', 100)
 
 
 class HistoryAdmin(admin.ModelAdmin):
@@ -78,11 +79,11 @@ class HistoryAdmin(admin.ModelAdmin):
 
 
 class ChangesAdmin(admin.ModelAdmin):
-    list_display = ['date_created', 'content_type', 'get_comment', 'get_link_admin_object']
+    list_display = ['__str__', 'content_type', 'get_comment', 'get_link_admin_object']
     list_filter = [('content_type', RelatedOnlyFieldListFilter), 'date_created', 'action']
     change_form_template = 'models_logging/change_form.html'
     revert_form_template = 'models_logging/revert_changes_confirmation.html'
-    search_fields = ['object_id', 'id']
+    search_fields = ['=object_id', '=id', '=revision__id']
 
     def get_comment(self, obj):
         return '%s: %s' % (obj.action, obj.object_repr)
@@ -170,14 +171,15 @@ class ChangesInline(admin.TabularInline):
 
 class RevisionAdmin(admin.ModelAdmin):
     inlines = [ChangesInline]
-    list_display = ['date_created', 'comment', 'changes']
+    list_display = ['__str__', 'comment', 'changes']
     list_filter = ['date_created']
     change_form_template = 'models_logging/change_form.html'
     revert_form_template = 'models_logging/revert_revision_confirmation.html'
     readonly_fields = ['comment']
+    search_fields = ['=id', '=changes__id']
 
     def get_queryset(self, request):
-        return super(RevisionAdmin, self).get_queryset(request).prefetch_related('changes_set')
+        return super(RevisionAdmin, self).get_queryset(request)
 
     def has_delete_permission(self, request, obj=None):
         return CAN_DELETE_REVISION(request, obj) if callable(CAN_DELETE_REVISION) else CAN_DELETE_REVISION
@@ -189,14 +191,16 @@ class RevisionAdmin(admin.ModelAdmin):
         return REVERT_IS_ALLOWED(request, obj) if callable(REVERT_IS_ALLOWED) else REVERT_IS_ALLOWED
 
     def changes(self, obj):
-        changes = [i for i in obj.changes_set.all()]
-        changes_string = ', '.join('<a href="%s">%s</a>' % (i.get_admin_url(), i.id) for i in changes[:100])
-        return format_html(changes_string + '...' if len(changes) > 100 else changes_string)
+        count = obj.changes_set.count()
+        if count > CHANGES_REVISION_LIMIT:
+            return 'Changes count - %s' % count
+        return format_html(', '.join('<a href="%s">%s</a>' % (i.get_admin_url(), i.id) for i in
+                                     [ch for ch in obj.changes_set.all()]))
 
     def get_inline_formsets(self, request, formsets, inline_instances, obj=None):
         for formset in formsets:
-            if formset.queryset.count() > 100:
-                formset.queryset = formset.queryset[:100]
+            if formset.queryset.count() > CHANGES_REVISION_LIMIT:
+                formset.queryset = formset.queryset[:CHANGES_REVISION_LIMIT]
         return super(RevisionAdmin, self).get_inline_formsets(request, formsets, inline_instances, obj)
 
     def get_urls(self):
@@ -210,27 +214,29 @@ class RevisionAdmin(admin.ModelAdmin):
         urls.insert(0, url(r'^(.+)/revert/$', wrap(self.revert_view), name='revert_revision'),)
         return urls
 
-    @transaction.atomic
     def revert_view(self, request, object_id, extra_context=None):
         obj = get_object_or_404(Revision, id=object_id)
         if not self.revert_is_allowed(request, obj):
             raise PermissionDenied
 
         if request.method == 'POST':
-            rev = Revision.objects.create(comment='Revert of revision %s' % obj)
             try:
-                with create_revision(rev):
-                    obj.revert()
-                messages.success(request, 'Changes of %s was reverted' % force_text(obj))
+                with transaction.atomic():
+                    rev = Revision.objects.create(comment='Revert of revision %s' % obj)
+                    with create_revision(rev):
+                        obj.revert()
+                    messages.success(request, 'Changes of %s was reverted' % force_text(obj))
+                    return redirect(reverse('admin:models_logging_revision_changelist'))
             except Exception as err:
                 messages.warning(request, 'Error: %s' % err)
-            return redirect(reverse('admin:models_logging_revision_changelist'))
 
         context = {
             'object': obj,
             'opts': self.model._meta,
             'object_name': force_text(obj),
-            'changes': obj.changes_set.all(),
+            'changes': obj.changes_set.all()[:CHANGES_REVISION_LIMIT],
+            'limit': CHANGES_REVISION_LIMIT,
+            'changes_count': obj.changes_set.count(),
         }
         context.update(extra_context or {})
         return render(request, self.revert_form_template, context)
