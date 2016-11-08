@@ -50,6 +50,11 @@ def save_model(sender, instance, using, **kwargs):
 
 
 def delete_model(sender, instance, using, **kwargs):
+    if isinstance(_local.ignore_changes, (tuple, list)) and sender in _local.ignore_changes:
+        return
+    elif _local.ignore_changes is True:
+        return
+    
     comment = 'Deleted %(klass)s %(repr)s:\n' % {'klass': sender.__name__, 'repr': force_text(instance)}
     create_changes(instance, using, comment, 'Deleted', _local.rev, _local.user)
 
