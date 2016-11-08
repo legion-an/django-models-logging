@@ -10,10 +10,12 @@ def create_changes(object, using, comment, action, rev=None, user=None):
 
 
 @contextmanager
-def create_revision(rev=None, user=None):
+def create_revision(rev=None, user=None, ignore_changes=False):
     from models_logging.signals import _local
     _local.rev = rev
     _local.user = user
+    _local.ignore_changes = ignore_changes
     yield
     _local.rev = None
     _local.user = None
+    _local.ignore_changes = False

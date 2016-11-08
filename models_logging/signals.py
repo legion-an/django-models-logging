@@ -14,6 +14,7 @@ class _Local(local):
     def __init__(self):
         self.rev = None
         self.user = None
+        self.ignore_changes = False
 
 
 _local = _Local()
@@ -32,6 +33,11 @@ def init_model_attrs(sender, instance, **kwargs):
 
 
 def save_model(sender, instance, using, **kwargs):
+    if isinstance(_local.ignore_changes, (tuple, list)) and sender in _local.ignore_changes:
+        return
+    elif _local.ignore_changes is True:
+        return
+
     d1 = _dict(instance)
     d2 = instance.__attrs
     diffs = [{'field': k, 'values': (d2[k], v)} for k, v in d1.items() if v != d2[k]]
