@@ -29,6 +29,10 @@ def _dict(instance):
 
 
 def init_model_attrs(sender, instance, **kwargs):
+    if isinstance(_local.ignore_changes, (tuple, list)) and sender in _local.ignore_changes:
+        return
+    elif _local.ignore_changes is True:
+        return
     instance.__attrs = _dict(instance)
 
 
