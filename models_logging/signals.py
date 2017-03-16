@@ -25,7 +25,10 @@ MODELS_FOR_EXCLUDE = getattr(settings, 'LOGGING_EXCLUDE', [])
 
 
 def _dict(instance):
-    return model_to_dict(instance, fields=[field.name for field in instance._meta.fields])
+    return model_to_dict(
+        instance,
+        fields={field.name for field in instance._meta.fields} - instance.get_deferred_fields()
+    )
 
 
 def init_model_attrs(sender, instance, **kwargs):
