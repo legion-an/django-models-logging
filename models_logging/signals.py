@@ -2,7 +2,6 @@ from threading import local
 
 from django.conf import settings
 from django.db.models.signals import post_init, post_save, post_delete
-from django.forms.models import model_to_dict
 from django.apps.registry import apps
 from django.utils.encoding import force_text
 
@@ -24,11 +23,18 @@ MODELS_FOR_LOGGING = getattr(settings, 'LOGGING_MODELS', None)
 MODELS_FOR_EXCLUDE = getattr(settings, 'LOGGING_EXCLUDE', [])
 
 
+def _model_to_dict(instance):
+    opts = instance._meta
+    data = {}
+    for f in opts.fields:
+        if f.name not in instance.get_deferred_fields():
+            name = '%s_id' % f.name if f.is_relation else f.name
+            data[name] = getattr(instance, name, None)
+    return data
+
+
 def _dict(instance):
-    return model_to_dict(
-        instance,
-        fields={field.name for field in instance._meta.fields} - instance.get_deferred_fields()
-    )
+    return _model_to_dict(instance)
 
 
 def init_model_attrs(sender, instance, **kwargs):
@@ -61,7 +67,7 @@ def delete_model(sender, instance, using, **kwargs):
         return
     elif _local.ignore_changes is True:
         return
-    
+
     comment = 'Deleted %(klass)s %(repr)s:\n' % {'klass': sender.__name__, 'repr': force_text(instance)}
     create_changes(instance, using, comment, 'Deleted', _local.rev, _local.user)
 

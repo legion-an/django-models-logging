@@ -114,7 +114,7 @@ class Changes(models.Model):
                 # TODO: if not prev_changes, need parse comment and take fields that was changed
                 # and revert only this fields
                 try:
-                    self.prev_changes.object.save()
+                    self.prev_changes.get_object().save()
                 except AttributeError:
                     raise NoPrevChangesError('No prev changes for this object')
 
