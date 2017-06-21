@@ -42,6 +42,9 @@ def init_model_attrs(sender, instance, **kwargs):
         return
     elif _local.ignore_changes is True:
         return
+    elif instance.get_deferred_fields():
+        return
+
     instance.__attrs = _dict(instance)
 
 
@@ -49,6 +52,8 @@ def save_model(sender, instance, using, **kwargs):
     if isinstance(_local.ignore_changes, (tuple, list)) and sender in _local.ignore_changes:
         return
     elif _local.ignore_changes is True:
+        return
+    elif instance.get_deferred_fields():
         return
 
     d1 = _dict(instance)
@@ -66,6 +71,8 @@ def delete_model(sender, instance, using, **kwargs):
     if isinstance(_local.ignore_changes, (tuple, list)) and sender in _local.ignore_changes:
         return
     elif _local.ignore_changes is True:
+        return
+    elif instance.get_deferred_fields():
         return
 
     comment = 'Deleted %(klass)s %(repr)s:\n' % {'klass': sender.__name__, 'repr': force_text(instance)}
