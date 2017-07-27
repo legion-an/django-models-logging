@@ -2,7 +2,7 @@ from datetime import datetime
 
 from django.core.management.base import BaseCommand
 
-from models_logging.models import Changes
+from models_logging.models import Change
 
 
 class Command(BaseCommand):
@@ -28,7 +28,7 @@ class Command(BaseCommand):
         full_delete = options['full_delete']
         exclude = options['exclude']
 
-        changes = Changes.objects.all()
+        changes = Change.objects.all()
         if content_type:
             changes = changes.filter(content_type__id__in=content_type.split(','))
         if exclude:

@@ -4,13 +4,13 @@ files = ["templates/models_logging/*", "migrations/*"]
 
 setup(
     name='django-models-logging',
-    version='0.1.7',
+    version='0.2',
     packages=['models_logging'],
     url='https://bitbucket.org/legion_an/django-models-logging',
-    package_data = {'models_logging' : files },
+    package_data = {'models_logging' : files},
     license='',
     author='legion',
-    author_email='legion_an@mail.ru',
+    author_email='legion.andrey.89@gmail.com',
     description='Add logging of models from save, delete signals',
     keywords=[
         'django logging',

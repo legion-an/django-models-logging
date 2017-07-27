@@ -14,7 +14,9 @@
                         <tr>
                             <th scope="col">{% trans 'Date/time' %}</th>
                             <th scope="col">{% trans 'User' %}</th>
+                            <th scope="col">{% trans 'Object' %}</th>
                             <th scope="col">{% trans 'Action' %}</th>
+                            <th scope="col">{% trans 'Changed data' %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -22,7 +24,7 @@
                             <tr>
                                 <th scope="row">
                                   {% if changes_admin %}
-                                    <a href="{% url 'admin:models_logging_changes_change' change.id %}">{{ change.date_created|date:"DATETIME_FORMAT"}}</a>
+                                    <a href="{% url 'admin:models_logging_change_change' change.id %}">{{ change.date_created|date:"DATETIME_FORMAT"}}</a>
                                   {% else %}
                                     {{ change.date_created|date:"DATETIME_FORMAT"}}
                                   {% endif %}
@@ -35,7 +37,17 @@
                                         &mdash;
                                     {% endif %}
                                 </td>
-                                <td>{{ change.comment|linebreaksbr|default:"" }}</td>
+                                <td>
+                                    {{ change.object_repr }}
+                                </td>
+                                <td>
+                                    {{ change.action }}
+                                </td>
+                                <td>
+                                    {% for data in change.display_changed_data %}
+                                        <p>{{ data.field }} - ({{ data.values.old }} -> {{ data.values.new }})</p>
+                                    {% endfor %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

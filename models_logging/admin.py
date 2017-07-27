@@ -1,3 +1,4 @@
+import json
 from functools import update_wrapper
 
 from django.core.urlresolvers import reverse
@@ -8,22 +9,16 @@ from django.contrib.admin.utils import unquote
 from django.contrib.admin.filters import RelatedOnlyFieldListFilter
 from django.contrib import messages
 from django.conf.urls import url
-from django.conf import settings
 from django.db import transaction
 from django.shortcuts import get_object_or_404, render, redirect
 from django.forms.models import model_to_dict
 from django.utils.html import format_html
 from django.utils.encoding import force_text
 
-from models_logging.models import Changes, Revision, NoPrevChangesError
-from models_logging.revisions import create_revision
-
-
-REVERT_IS_ALLOWED = getattr(settings, 'LOGGING_REVERT_IS_ALLOWED', True)
-CAN_DELETE_REVISION = getattr(settings, 'LOGGING_CAN_DELETE_REVISION', False)
-CAN_DELETE_CHANGES = getattr(settings, 'LOGGING_CAN_DELETE_CHANGES', False)
-CAN_CHANGE_CHANGES = getattr(settings, 'LOGGING_CAN_CHANGE_CHANGES', False)
-CHANGES_REVISION_LIMIT = getattr(settings, 'LOGGING_CHANGES_REVISION_LIMIT', 100)
+from .settings import CAN_DELETE_CHANGES, CAN_CHANGE_CHANGES, CAN_DELETE_REVISION, REVERT_IS_ALLOWED, \
+    CHANGES_REVISION_LIMIT, ADDED, CHANGED, DELETED
+from .models import Change, Revision
+from .signals import create_revision
 
 
 class HistoryAdmin(admin.ModelAdmin):
@@ -65,25 +60,26 @@ class HistoryAdmin(admin.ModelAdmin):
 
         # Compile the context.
         changes_admin = False
-        if Changes in admin.site._registry:
+        if Change in admin.site._registry:
             changes_admin = True
 
         if self.inline_models_history == '__all__':
             self.inline_models_history = self.inlines
         related_objects = [m for m in self.model._meta.related_objects
                            if m.related_model in [i.model for i in self.inline_models_history]]
-        context = {"changes": Changes.get_changes_by_obj(self.model, object_id, related_objects=related_objects),
+        context = {"changes": Change.get_changes_by_obj(self.model, object_id, related_objects=related_objects),
                    'changes_admin': changes_admin}
         context.update(extra_context or {})
         return super(HistoryAdmin, self).history_view(request, object_id, context)
 
 
-class ChangesAdmin(admin.ModelAdmin):
+class ChangeAdmin(admin.ModelAdmin):
     list_display = ['__str__', 'content_type', 'get_comment', 'get_link_admin_object']
     list_filter = [('content_type', RelatedOnlyFieldListFilter), 'date_created', 'action']
     change_form_template = 'models_logging/change_form.html'
     revert_form_template = 'models_logging/revert_changes_confirmation.html'
     search_fields = ['=object_id', '=id', '=revision__id']
+    raw_id_fields = ['revision']
 
     def get_comment(self, obj):
         return '%s: %s' % (obj.action, obj.object_repr)
@@ -113,22 +109,21 @@ class ChangesAdmin(admin.ModelAdmin):
         return fields + ['revision']
 
     def revert_view(self, request, object_id, extra_context=None):
-        obj = get_object_or_404(Changes, id=object_id)
+        obj = get_object_or_404(Change, id=object_id)
         if not self.revert_is_allowed(request, obj):
             raise PermissionDenied
 
-        revert_obj = next(deserialize('json', obj.serialized_data)).object
-
         if request.method == 'POST':
-            if obj.action == 'Added':
+            if obj.action == ADDED:
                 # if model is registered in django admin try redirect to delete page
                 if obj.content_type.model_class() in admin.site._registry:
                     return redirect(reverse('admin:%s_%s_delete' %
                                             (obj.content_type.app_label, obj.content_type.model), args=[obj.object_id]))
             try:
-                obj.revert()
+                with create_revision(user=request.user):
+                    obj.revert()
                 messages.success(request, 'Changes of %s was reverted' % obj.object_repr)
-                return redirect(reverse('admin:models_logging_changes_changelist'))
+                return redirect(reverse('admin:models_logging_change_changelist'))
             except Exception as err:
                 messages.warning(request, 'Error: %s' % err)
 
@@ -136,7 +131,7 @@ class ChangesAdmin(admin.ModelAdmin):
             'object': obj,
             'opts': self.model._meta,
             'object_name': obj.object_repr,
-            'revert_obj': model_to_dict(revert_obj),
+            'changed_data': json.loads(obj.changed_data),
         }
         context.update(extra_context or {})
         return render(request, self.revert_form_template, context)
@@ -148,19 +143,19 @@ class ChangesAdmin(admin.ModelAdmin):
             wrapper.model_admin = self
             return update_wrapper(wrapper, view)
 
-        urls = super(ChangesAdmin, self).get_urls()
+        urls = super(ChangeAdmin, self).get_urls()
         urls.insert(0, url(r'^(.+)/revert/$', wrap(self.revert_view), name='revert_changes'),)
         return urls
 
 
-class ChangesInline(admin.TabularInline):
-    model = Changes
+class ChangeInline(admin.TabularInline):
+    model = Change
     fields = ['__str__', 'content_type', 'object_id', 'object_repr', 'action']
     readonly_fields = fields
     extra = 0
 
     def get_queryset(self, request):
-        return super(ChangesInline, self).get_queryset(request).select_related('content_type')
+        return super(ChangeInline, self).get_queryset(request).select_related('content_type')
 
     def has_add_permission(self, request):
         return False
@@ -170,7 +165,7 @@ class ChangesInline(admin.TabularInline):
 
 
 class RevisionAdmin(admin.ModelAdmin):
-    inlines = [ChangesInline]
+    inlines = [ChangeInline]
     list_display = ['__str__', 'comment', 'changes']
     list_filter = ['date_created']
     change_form_template = 'models_logging/change_form.html'
@@ -191,11 +186,11 @@ class RevisionAdmin(admin.ModelAdmin):
         return REVERT_IS_ALLOWED(request, obj) if callable(REVERT_IS_ALLOWED) else REVERT_IS_ALLOWED
 
     def changes(self, obj):
-        count = obj.changes_set.count()
+        count = obj.change_set.count()
         if count > CHANGES_REVISION_LIMIT:
             return 'Changes count - %s' % count
         return format_html(', '.join('<a href="%s">%s</a>' % (i.get_admin_url(), i.id) for i in
-                                     [ch for ch in obj.changes_set.all()]))
+                                     [ch for ch in obj.change_set.all()]))
 
     def get_inline_formsets(self, request, formsets, inline_instances, obj=None):
         for formset in formsets:
@@ -223,7 +218,7 @@ class RevisionAdmin(admin.ModelAdmin):
             try:
                 with transaction.atomic():
                     rev = Revision.objects.create(comment='Revert of revision %s' % obj)
-                    with create_revision(rev):
+                    with create_revision(rev, user=request.user):
                         obj.revert()
                     messages.success(request, 'Changes of %s was reverted' % force_text(obj))
                     return redirect(reverse('admin:models_logging_revision_changelist'))
@@ -234,12 +229,12 @@ class RevisionAdmin(admin.ModelAdmin):
             'object': obj,
             'opts': self.model._meta,
             'object_name': force_text(obj),
-            'changes': obj.changes_set.all()[:CHANGES_REVISION_LIMIT],
+            'changes': obj.change_set.all()[:CHANGES_REVISION_LIMIT],
             'limit': CHANGES_REVISION_LIMIT,
-            'changes_count': obj.changes_set.count(),
+            'changes_count': obj.change_set.count(),
         }
         context.update(extra_context or {})
         return render(request, self.revert_form_template, context)
 
-admin.site.register(Changes, ChangesAdmin)
+admin.site.register(Change, ChangeAdmin)
 admin.site.register(Revision, RevisionAdmin)

@@ -9,13 +9,9 @@ from django.db import models, transaction
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import python_2_unicode_compatible
-from django.core.serializers import deserialize
 from django.core.urlresolvers import reverse
 
-from models_logging.revisions import create_changes
-
-
-class NoPrevChangesError(Exception): pass
+from .settings import ADDED, CHANGED, DELETED
 
 
 @python_2_unicode_compatible
@@ -38,32 +34,36 @@ class Revision(models.Model):
         return reverse('admin:models_logging_revision_change', args=[self.id])
 
     def revert(self):
-        for ch in self.changes_set.all():
+        for ch in self.change_set.all():
             ch.revert()
 
 
 @python_2_unicode_compatible
-class Changes(models.Model):
+class Change(models.Model):
     class Meta:
         ordering = ("-pk",)
         verbose_name = _('Changes of object')
         verbose_name_plural = _('All changes')
 
+    ACTIONS = (
+        (ADDED, _("Added")),
+        (CHANGED, _("Changed")),
+        (DELETED, _("Deleted"))
+    )
+
     date_created = models.DateTimeField(_("Date created"), db_index=True, auto_now_add=True,
                                         help_text=_("The date and time this changes was."))
     user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL,
                              verbose_name=_("User"), help_text=_("The user who created this changes."))
-    comment = models.TextField(_("Comment"), help_text=_("A text comment on this changes."))
     object_id = models.CharField(max_length=191, help_text=_("Primary key of the model under version control."))
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
                                      help_text="Content type of the model under version control.")
     object = GenericForeignKey(ct_field="content_type", fk_field="object_id")
     db = models.CharField(max_length=191, help_text=_("The database the model under version control is stored in."))
-    serialized_data = models.TextField(blank=True, null=True,
-                                       help_text=_("The serialized form of this version of the model."))
+    changed_data = models.TextField(blank=True, null=True, help_text=_("The old data of changed fields."))
     object_repr = models.TextField(help_text=_("A string representation of the object."))
     revision = models.ForeignKey(Revision, blank=True, null=True, verbose_name='to revision')
-    action = models.CharField(_("Action"), help_text=_('added|changed|deleted'), max_length=7)
+    action = models.CharField(_("Action"), choices=ACTIONS, help_text=_('added|changed|deleted'), max_length=7)
 
     def __str__(self):
         return "Changes %s of %s <%s>" % (self.id, self.object_repr, self.date_created.strftime('%Y-%m-%d %H:%M:%S.%f'))
@@ -95,46 +95,26 @@ class Changes(models.Model):
         qobj = models.Q()
         for k, v in history_objects.items():
             qobj.add(models.Q(content_type_id=k, object_id__in=v), models.Q.OR)
-        return Changes.objects.filter(qobj)
-
-    @property
-    def prev_changes(self):
-        return Changes.objects.filter(content_type_id=self.content_type_id, object_id=self.object_id,
-                                      id__lt=self.id).first()
+        return Change.objects.filter(qobj)
 
     def revert(self):
         with transaction.atomic():
-            if self.action == 'Added' and self.object:
+            data = {data['field']: data['values'].get('old') for data in json.loads(self.changed_data)}
+            if self.action == ADDED:
                 self.object.delete()
-            elif self.action == 'Deleted':
-                obj = self.get_object()
-                obj.save()
-                create_changes(obj, 'default', 'Recover object', action='Added')
+            elif self.action == CHANGED:
+                for k, v in data.items():
+                    setattr(self.object, k, v)
+                self.object.save()
             else:
-                # TODO: if not prev_changes, need parse comment and take fields that was changed
-                # and revert only this fields
-                try:
-                    self.prev_changes.get_object().save()
-                except AttributeError:
-                    raise NoPrevChangesError('No prev changes for this object')
+                obj = self.changes_model_class()(**data)
+                obj.save()
 
-    def set_attr(self, attr, value):
-        data = json.loads(self.serialized_data)[0]
-        if attr in data:
-            data[attr] = value
-        else:
-            data['fields'][attr] = value
-        self.serialized_data = json.dumps([data])
-        self.save()
-
-    def del_attr(self, attr):
-        data = json.loads(self.serialized_data)[0]
-        data['fields'].pop(attr, None)
-        self.serialized_data = json.dumps([data])
-        self.save()
-
-    def get_object(self):
-        return next(deserialize('json', self.serialized_data)).object
+    def changes_model_class(self):
+        return self.content_type.model_class()
 
     def get_admin_url(self):
-        return reverse('admin:models_logging_changes_change', args=[self.id])
+        return reverse('admin:models_logging_change_change', args=[self.id])
+
+    def display_changed_data(self):
+        return json.loads(self.changed_data)

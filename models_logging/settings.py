@@ -1,0 +1,16 @@
+from django.conf import settings
+
+
+MODELS_FOR_LOGGING = getattr(settings, 'LOGGING_MODELS', None)
+MODELS_FOR_EXCLUDE = getattr(settings, 'LOGGING_EXCLUDE', [])
+
+
+REVERT_IS_ALLOWED = getattr(settings, 'LOGGING_REVERT_IS_ALLOWED', True)
+CAN_DELETE_REVISION = getattr(settings, 'LOGGING_CAN_DELETE_REVISION', False)
+CAN_DELETE_CHANGES = getattr(settings, 'LOGGING_CAN_DELETE_CHANGES', False)
+CAN_CHANGE_CHANGES = getattr(settings, 'LOGGING_CAN_CHANGE_CHANGES', False)
+CHANGES_REVISION_LIMIT = getattr(settings, 'LOGGING_CHANGES_REVISION_LIMIT', 100)
+
+ADDED = 'added'
+CHANGED = 'changed'
+DELETED = 'deleted'

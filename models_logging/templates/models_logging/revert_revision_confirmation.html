@@ -30,10 +30,14 @@
         {% for change in changes %}
           <tr>
             <td>{{ change }}</td>
-            <td>{{ change.action }}</td>
+            <td>{{ change.get_action_display }}</td>
             <td>{{ change.content_type }}</td>
             <td>{{ change.object_id }}</td>
-            <td>{{ change.comment|linebreaks }}</td>
+            <td>
+              {% for data in change.display_changed_data %}
+                <p>{{ data.field }} - ({{ data.values.old }} -> {{ data.values.new }})</p>
+              {% endfor %}
+            </td>
           </tr>
         {% endfor %}
     </table>

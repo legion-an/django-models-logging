@@ -7,5 +7,5 @@ class LoggingConfig(AppConfig):
     verbose_name = _('Models logging')
 
     def ready(self):
-        from models_logging.signals import models_register
+        from .setup import models_register
         models_register()

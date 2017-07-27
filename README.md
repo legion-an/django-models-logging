@@ -48,6 +48,20 @@ LOGGING_CAN_DELETE_CHANGES = False
 LOGGING_CAN_CHANGE_CHANGES = True
 ```
 
+in models you can set attributes:
+ ```
+#!python
+LOGGING_IGNORE_FIELDS   # to ignore changes of some fields 
+```
+or 
+
+ ```
+#!python
+LOGGING_ONLY_FIELDS     # to save changes of only those fields 
+```
+
+ 
+
 # PS: It's not a backup your database, don't try to revert "huge" Revisions
 # Recovering changes it's at least 1 hit to database (save or delete),
 # if you run recovering thousands of changes this will be very slowly
