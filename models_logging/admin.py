@@ -18,7 +18,6 @@ from django.utils.encoding import force_text
 from .settings import CAN_DELETE_CHANGES, CAN_CHANGE_CHANGES, CAN_DELETE_REVISION, REVERT_IS_ALLOWED, \
     CHANGES_REVISION_LIMIT, ADDED, CHANGED, DELETED
 from .models import Change, Revision
-from .signals import create_revision
 
 
 class HistoryAdmin(admin.ModelAdmin):
@@ -26,30 +25,16 @@ class HistoryAdmin(admin.ModelAdmin):
     history_latest_first = False
     inline_models_history = '__all__'
 
-    def __init__(self, *args, **kwargs):
-        super(HistoryAdmin, self).__init__(*args, **kwargs)
-        self._rev = None
-        self._user = None
+    def get_changes_queryset(self, object_id):
+        qs = Change.get_changes_by_obj(self.model, object_id,
+                                       related_objects=self.get_related_objects_for_changes(object_id))
+        if self.history_latest_first:
+            qs = qs.order_by('pk')
+        return qs
 
-    def _reversion_order_version_queryset(self, queryset):
-        """Applies the correct ordering to the given version queryset."""
-        if not self.history_latest_first:
-            queryset = queryset.order_by("pk")
-        return queryset
-
-    def save_model(self, request, obj, form, change):
-        self._user = request.user
-        self._rev = Revision.objects.create(comment='Changes in admin')
-        with create_revision(self._rev, self._user):
-            super(HistoryAdmin, self).save_model(request, obj, form, change)
-
-    def save_related(self, request, form, formsets, change):
-        with create_revision(self._rev, self._user):
-            super(HistoryAdmin, self).save_related(request, form, formsets, change)
-
-    def delete_model(self, request, obj):
-        with create_revision(None, request.user):
-            super(HistoryAdmin, self).delete_model(request, obj)
+    def get_related_objects_for_changes(self, object_id):
+        return [m for m in self.model._meta.related_objects
+                if m.related_model in [i.model for i in self.inline_models_history]]
 
     def history_view(self, request, object_id, extra_context=None):
         """Renders the history view."""
@@ -58,6 +43,8 @@ class HistoryAdmin(admin.ModelAdmin):
             raise PermissionDenied
         object_id = unquote(object_id)  # Underscores in primary key get quoted to "_5F"
 
+        assert isinstance(self.inline_models_history, (tuple, list)) or self.inline_models_history == '__all__'
+
         # Compile the context.
         changes_admin = False
         if Change in admin.site._registry:
@@ -65,10 +52,8 @@ class HistoryAdmin(admin.ModelAdmin):
 
         if self.inline_models_history == '__all__':
             self.inline_models_history = self.inlines
-        related_objects = [m for m in self.model._meta.related_objects
-                           if m.related_model in [i.model for i in self.inline_models_history]]
-        context = {"changes": Change.get_changes_by_obj(self.model, object_id, related_objects=related_objects),
-                   'changes_admin': changes_admin}
+
+        context = {"changes": self.get_changes_queryset(object_id), 'changes_admin': changes_admin}
         context.update(extra_context or {})
         return super(HistoryAdmin, self).history_view(request, object_id, context)
 
@@ -120,8 +105,7 @@ class ChangeAdmin(admin.ModelAdmin):
                     return redirect(reverse('admin:%s_%s_delete' %
                                             (obj.content_type.app_label, obj.content_type.model), args=[obj.object_id]))
             try:
-                with create_revision(user=request.user):
-                    obj.revert()
+                obj.revert()
                 messages.success(request, 'Changes of %s was reverted' % obj.object_repr)
                 return redirect(reverse('admin:models_logging_change_changelist'))
             except Exception as err:
@@ -217,9 +201,7 @@ class RevisionAdmin(admin.ModelAdmin):
         if request.method == 'POST':
             try:
                 with transaction.atomic():
-                    rev = Revision.objects.create(comment='Revert of revision %s' % obj)
-                    with create_revision(rev, user=request.user):
-                        obj.revert()
+                    obj.revert()
                     messages.success(request, 'Changes of %s was reverted' % force_text(obj))
                     return redirect(reverse('admin:models_logging_revision_changelist'))
             except Exception as err:
@@ -235,6 +217,7 @@ class RevisionAdmin(admin.ModelAdmin):
         }
         context.update(extra_context or {})
         return render(request, self.revert_form_template, context)
+
 
 admin.site.register(Change, ChangeAdmin)
 admin.site.register(Revision, RevisionAdmin)

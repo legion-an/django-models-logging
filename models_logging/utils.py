@@ -1,5 +1,9 @@
 # Helpers
+from contextlib import contextmanager
+
+from . import _local
 from .settings import DELETED, CHANGED
+from .models import Revision, Change
 
 
 def model_to_dict(instance, action=None):
@@ -31,3 +35,45 @@ def get_changed_data(obj, action=CHANGED):
                 'values': {'old': d2[k] if action == CHANGED else None, 'new': v}
             } for k, v in d1.items() if v != d2[k]
         ]
+
+
+@contextmanager
+def ignore_changes(models=None):
+    """
+
+    :param models: tuple or list of django models instances or bool if you want to ignore all changes
+    :return:
+    """
+    if models:
+        assert isinstance(models, (tuple, list, bool))
+    _local.ignore_changes = models or True
+    yield
+    _local.ignore_changes = False
+
+
+@contextmanager
+def create_merged_changes():
+    """
+
+    :param changes: list of changes from create_changes,
+    can be empty if we want use models_logging functional from third part scripts
+    :return:
+    """
+    _local.stack_changes = {}
+    yield
+    create_revision_with_changes(_local.stack_changes.values())
+
+
+def create_revision_with_changes(changes):
+    """
+
+    :param changes: _local.stack_changes
+    :return:
+    """
+    comment = ', '.join([v['object_repr'] for v in changes])
+    rev = Revision.objects.create(comment='Изменения %s' % comment)
+    bulk = []
+    for data in changes:
+        data['revision_id'] = rev.id
+        bulk.append(Change(**data))
+    Change.objects.bulk_create(bulk)

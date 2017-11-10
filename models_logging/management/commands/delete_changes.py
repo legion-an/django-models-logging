@@ -17,15 +17,10 @@ class Command(BaseCommand):
         parser.add_argument(
             '--date_lte', type=str, help='The changes started before that date will be removed, format (yyyy.mm.dd)',
         )
-        parser.add_argument(
-            '--full_delete', type=bool, default=False,
-            help='if True will be used Change.objects.delete(), else Changes.comments stay for history',
-        )
 
     def handle(self, *args, **options):
         content_type = options['ctype']
         date_lte = options['date_lte']
-        full_delete = options['full_delete']
         exclude = options['exclude']
 
         changes = Change.objects.all()
@@ -36,7 +31,4 @@ class Command(BaseCommand):
         if date_lte:
             changes = changes.filter(date_created__lte=datetime.strptime(date_lte, '%Y.%m.%d'))
 
-        if full_delete:
-            changes.delete()
-        else:
-            changes.update(user=None, serialized_data=None,)
+        changes.delete()
