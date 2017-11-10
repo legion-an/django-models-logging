@@ -1,9 +1,20 @@
 # Helpers
 from contextlib import contextmanager
 
+from django.core.serializers.json import DjangoJSONEncoder
+from django.contrib.gis.geos import Point
+
 from . import _local
 from .settings import DELETED, CHANGED
 from .models import Revision, Change
+
+
+class GeoEncoder(DjangoJSONEncoder):
+
+    def default(self, o):
+        if isinstance(o, Point):
+            return {'type': o.geom_type, 'coordinates': [*o.coords]}
+        return super(GeoEncoder, self).default(o)
 
 
 def model_to_dict(instance, action=None):

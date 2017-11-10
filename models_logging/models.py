@@ -79,23 +79,32 @@ class Change(models.Model):
         """
 
         obj = model.objects.get(pk=obj_id)
-        history_objects = {ContentType.objects.get_for_model(model).id: [obj_id]}
+        history_objects = [{'content_type_id': ContentType.objects.get_for_model(model).id, 'values': [obj_id]}]
         if related_objects == '__all__':
             related_objects = model._meta.related_objects
         for rel_model in related_objects:
-            if type(rel_model.field) == models.OneToOneField:
+            if isinstance(rel_model, models.OneToOneRel):
                 try:
                     values = [getattr(obj, rel_model.get_accessor_name()).pk]
                 except rel_model.related_model.DoesNotExist:
                     continue
+            elif isinstance(rel_model, models.ManyToOneRel):
+                values = getattr(obj, rel_model.get_accessor_name()).all().values_list('pk', flat=True)
+            elif isinstance(rel_model, models.ForeignKey):
+                values = [getattr(obj, rel_model.get_attname())]
+            elif isinstance(rel_model, models.ManyToManyField):
+                values = getattr(obj, rel_model.get_attname()).all().values_list('pk', flat=True)
             else:
-                values = list(getattr(obj, rel_model.get_accessor_name()).all().values_list('pk', flat=True))
-            key = ContentType.objects.get_for_model(rel_model.related_model).id
-            history_objects.update({key: values})
+                continue
+
+            history_objects.append(
+                {'content_type_id': ContentType.objects.get_for_model(rel_model.related_model).id,
+                 'values': values}
+            )
         qobj = models.Q()
-        for k, v in history_objects.items():
-            qobj.add(models.Q(content_type_id=k, object_id__in=v), models.Q.OR)
-        return Change.objects.filter(qobj)
+        for v in history_objects:
+            qobj.add(models.Q(content_type_id=v['content_type_id'], object_id__in=v['values']), models.Q.OR)
+        return Change.objects.filter(qobj).select_related('user')
 
     def revert(self):
         with transaction.atomic():

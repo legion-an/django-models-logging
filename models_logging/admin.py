@@ -29,7 +29,7 @@ class HistoryAdmin(admin.ModelAdmin):
         qs = Change.get_changes_by_obj(self.model, object_id,
                                        related_objects=self.get_related_objects_for_changes(object_id))
         if self.history_latest_first:
-            qs = qs.order_by('pk')
+            qs = qs.order_by('date_created')
         return qs
 
     def get_related_objects_for_changes(self, object_id):
