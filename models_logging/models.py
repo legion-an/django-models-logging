@@ -59,6 +59,7 @@ class Change(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
                                      help_text="Content type of the model under version control.")
     object = GenericForeignKey(ct_field="content_type", fk_field="object_id")
+    # TODO: db is not used yet
     db = models.CharField(max_length=191, help_text=_("The database the model under version control is stored in."))
     changed_data = models.TextField(blank=True, null=True, help_text=_("The old data of changed fields."))
     object_repr = models.TextField(help_text=_("A string representation of the object."))
@@ -75,6 +76,9 @@ class Change(models.Model):
         :param model: class of models.Model
         :param obj_id: pk
         :param related_objects: can be "__all__" or list of models, if __all__ take changes of related objects to model
+        by default related_objects is OneToOne or ManyToOne relations, but
+        expressions for ForeignKey and ManyToMany added if related_objects is some like this
+         [m for m in self.model._meta.get_fields() if m.is_relation]
         :return: queryset of Changes
         """
 

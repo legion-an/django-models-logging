@@ -52,7 +52,7 @@ def get_changed_data(obj, action=CHANGED):
 def ignore_changes(models=None):
     """
 
-    :param models: tuple or list of django models instances or bool if you want to ignore all changes
+    :param models: tuple or list of django models or bool if you want to ignore all changes
     :return:
     """
     if models:
@@ -65,14 +65,21 @@ def ignore_changes(models=None):
 @contextmanager
 def create_merged_changes():
     """
+    for using merged changes in some script outside django (ex. celery)
+    @task
+    def some_task():
+        with create_merged_changes():
+            some logic
 
-    :param changes: list of changes from create_changes,
-    can be empty if we want use models_logging functional from third part scripts
+    first clean _local.stack_changes
+    in your logic, changes appended to _local.stack_changes
+    at the end all changes will be added in database
     :return:
     """
     _local.stack_changes = {}
     yield
     create_revision_with_changes(_local.stack_changes.values())
+    _local.stack_changes = {}
 
 
 def create_revision_with_changes(changes):
