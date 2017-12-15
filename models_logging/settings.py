@@ -16,4 +16,6 @@ ADDED = 'added'
 CHANGED = 'changed'
 DELETED = 'deleted'
 
+CUSTOM_JSON_ENCODER = getattr(settings, 'CUSTOM_JSON_ENCODER', None)
+
 MIDDLEWARES = settings.MIDDLEWARE_CLASSES

@@ -2,11 +2,18 @@ import json
 
 from django.utils.encoding import force_text
 from django.contrib.contenttypes.models import ContentType
+from django.utils.module_loading import import_string
 
 from . import _local
 from .utils import get_changed_data, model_to_dict, ExtendedEncoder
 from .settings import ADDED, CHANGED, DELETED, MERGE_CHANGES, MIDDLEWARES
 from .models import Change
+from .settings import CUSTOM_JSON_ENCODER
+
+
+JSON_ENCODER = ExtendedEncoder
+if CUSTOM_JSON_ENCODER:
+    JSON_ENCODER = import_string(CUSTOM_JSON_ENCODER)
 
 
 def init_model_attrs(sender, instance, **kwargs):
@@ -28,7 +35,7 @@ def delete_model(sender, instance, using, **kwargs):
 
 
 def _create_changes(object, using, action):
-    changed_data = json.dumps(get_changed_data(object, action), cls=ExtendedEncoder)
+    changed_data = json.dumps(get_changed_data(object, action), cls=JSON_ENCODER)
     user_id = _local.user.pk if _local.user and _local.user.is_authenticated() else None
     content_type_id = ContentType.objects.get_for_model(object._meta.model).pk
     data = {'db': using, 'object_repr': force_text(object), 'action': action, 'user_id': user_id,
