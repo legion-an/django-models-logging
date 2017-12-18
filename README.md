@@ -31,7 +31,7 @@ LOGGING_MODELS = (
 ```
 #!python
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     ...,
     'models_logging.middleware.LoggingStackMiddleware',     # it merge all changes of object per request
 )
@@ -99,6 +99,10 @@ class YourAdminModel(HistoryAdmin):
 
 ```
 
+
+Version > 1.0 is incompatible with old versions (requires django >= 2.0)
+for django <= 2.0 use 0.9.7 version
+ 
 
 
 # PS: It's not a backup your database, don't try to revert "huge" Revisions

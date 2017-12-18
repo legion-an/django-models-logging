@@ -36,7 +36,7 @@ def delete_model(sender, instance, using, **kwargs):
 
 def _create_changes(object, using, action):
     changed_data = json.dumps(get_changed_data(object, action), cls=JSON_ENCODER)
-    user_id = _local.user.pk if _local.user and _local.user.is_authenticated() else None
+    user_id = _local.user.pk if _local.user and _local.user.is_authenticated else None
     content_type_id = ContentType.objects.get_for_model(object._meta.model).pk
     data = {'db': using, 'object_repr': force_text(object), 'action': action, 'user_id': user_id,
             'changed_data': changed_data, 'object_id': object.pk, 'content_type_id': content_type_id}

@@ -1,15 +1,12 @@
 import json
 
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-try:
-    from django.contrib.contenttypes.fields import GenericForeignKey
-except ImportError:  # Django < 1.9 pragma: no cover
-    from django.contrib.contenttypes.generic import GenericForeignKey
 from django.db import models, transaction
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import python_2_unicode_compatible
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from .settings import ADDED, CHANGED, DELETED
 
@@ -63,7 +60,7 @@ class Change(models.Model):
     db = models.CharField(max_length=191, help_text=_("The database the model under version control is stored in."))
     changed_data = models.TextField(blank=True, null=True, help_text=_("The old data of changed fields."))
     object_repr = models.TextField(help_text=_("A string representation of the object."))
-    revision = models.ForeignKey(Revision, blank=True, null=True, verbose_name='to revision')
+    revision = models.ForeignKey(Revision, blank=True, null=True, verbose_name='to revision', on_delete=models.CASCADE)
     action = models.CharField(_("Action"), choices=ACTIONS, help_text=_('added|changed|deleted'), max_length=7)
 
     def __str__(self):
