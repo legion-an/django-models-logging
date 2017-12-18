@@ -3,7 +3,6 @@ from functools import update_wrapper
 
 from django.core.urlresolvers import reverse
 from django.core.exceptions import PermissionDenied
-from django.core.serializers import deserialize
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.contrib.admin.filters import RelatedOnlyFieldListFilter
@@ -11,12 +10,11 @@ from django.contrib import messages
 from django.conf.urls import url
 from django.db import transaction
 from django.shortcuts import get_object_or_404, render, redirect
-from django.forms.models import model_to_dict
 from django.utils.html import format_html
 from django.utils.encoding import force_text
 
 from .settings import CAN_DELETE_CHANGES, CAN_CHANGE_CHANGES, CAN_DELETE_REVISION, REVERT_IS_ALLOWED, \
-    CHANGES_REVISION_LIMIT, ADDED, CHANGED, DELETED
+    CHANGES_REVISION_LIMIT, ADDED
 from .models import Change, Revision
 
 
