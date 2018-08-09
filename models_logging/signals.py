@@ -18,7 +18,12 @@ if CUSTOM_JSON_ENCODER:
 
 def init_model_attrs(sender, instance, **kwargs):
     if not _local.ignore(sender, instance):
-        instance.__attrs = model_to_dict(instance)
+        model_dict = model_to_dict(instance)
+        # for rest_framework
+        if not instance.id:
+            model_dict = {k: None for k, v in model_dict.items()}
+
+        instance.__attrs = model_dict
 
 
 def save_model(sender, instance, using, **kwargs):
