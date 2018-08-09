@@ -2,18 +2,23 @@
 from contextlib import contextmanager
 
 from django.core.serializers.json import DjangoJSONEncoder
-from django.contrib.gis.geos import Point
 from django.db.models.fields.files import FieldFile
 
 from . import _local
 from .settings import DELETED, CHANGED
 from .models import Revision, Change
 
+try:
+    from django.contrib.gis.geos import Point
+    GEOS_POINT = True
+except ImproperlyConfigured:
+    GEOS_POINT = False
+
 
 class ExtendedEncoder(DjangoJSONEncoder):
 
     def default(self, o):
-        if isinstance(o, Point):
+        if GEOS_POINT and isinstance(o, Point):
             return {'type': o.geom_type, 'coordinates': [*o.coords]}
         if isinstance(o, FieldFile):
             return getattr(o, 'name', None)
@@ -21,18 +26,15 @@ class ExtendedEncoder(DjangoJSONEncoder):
 
 
 def model_to_dict(instance, action=None):
-    def fname(f):
-        return '%s_id' % f.name if f.is_relation else f.name
-
     opts = instance._meta
     ignore_fields = getattr(instance, 'LOGGING_IGNORE_FIELDS', [])
     only_fields = getattr(instance, 'LOGGING_ONLY_FIELDS', [])
     if action != DELETED and only_fields:
-        fnames = [fname(f) for f in opts.fields if f.name in only_fields]
+        fnames = [f.attname for f in opts.fields if f.name in only_fields]
     elif action != DELETED and ignore_fields:
-        fnames = [fname(f) for f in opts.fields if f.name not in ignore_fields]
+        fnames = [f.attname for f in opts.fields if f.name not in ignore_fields]
     else:
-        fnames = [fname(f) for f in opts.fields]
+        fnames = [f.attname for f in opts.fields]
     data = {f: getattr(instance, f, None) for f in fnames}
     return data
 
