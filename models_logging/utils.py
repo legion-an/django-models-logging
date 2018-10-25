@@ -1,6 +1,7 @@
 # Helpers
 from contextlib import contextmanager
 
+from django.core.exceptions import ImproperlyConfigured
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models.fields.files import FieldFile
 
