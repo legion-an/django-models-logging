@@ -4,8 +4,6 @@
 
 # 1.
 ```
-#!python
-
 INSTALLED_APPS = (
     ...,
     'models_logging',
@@ -17,8 +15,6 @@ INSTALLED_APPS = (
 # 3. add the models you want to log in settings, format:
 
 ```
-#!python
-
 LOGGING_MODELS = (
     'app.ClassName',    # logging only for this model
     'another_app'     # logging of all models in this app
@@ -29,8 +25,6 @@ LOGGING_MODELS = (
 # per each .save() models_logging creates Change, so your database can quickly grow to a very large size
 # for prevent this "bug" you can add middleware in settings
 ```
-#!python
-
 MIDDLEWARE = (
     ...,
     'models_logging.middleware.LoggingStackMiddleware',     # it merge all changes of object per request
@@ -39,9 +33,7 @@ MIDDLEWARE = (
 
 # or use context_manager from models_logging.utils in your view or script
 ```
-#!python
 from models_logging.utils import create_merged_changes
-
 
 def your_script():
     with create_merged_changes():
@@ -51,8 +43,6 @@ def your_script():
 
 # You can add model for ignore logging
 ```
-#!python
-
 LOGGING_EXCLUDE = (
     'app'     # ignore logging of all models in this app
     'another_app.Model'     # ignore logging for this model
@@ -63,9 +53,7 @@ LOGGING_EXCLUDE = (
 # Also you can set up permission for the logging records
 # Make func (it will be called in admin) or bool
 
-```
-#!python
-
+`````````
 def can_revert(request, obj):
     return request.user.username == 'myusername'
 
@@ -77,7 +65,6 @@ LOGGING_CAN_CHANGE_CHANGES = True
 
 # in models you can set attributes:
 ```
-#!python
 LOGGING_IGNORE_FIELDS   # to ignore changes of some fields
 
 #OR
@@ -89,7 +76,6 @@ LOGGING_ONLY_FIELDS     # to save changes of only those fields
 # If you want to watch changes in admin/history of your object you can use models_logging.admin.HistoryAdmin
 
 ```
-#!python
 from models_logging.admin import HistoryAdmin
 
 
