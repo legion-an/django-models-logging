@@ -52,8 +52,7 @@ LOGGING_EXCLUDE = (
 
 # Also you can set up permission for the logging records
 # Make func (it will be called in admin) or bool
-
-`````````
+```
 def can_revert(request, obj):
     return request.user.username == 'myusername'
 
