@@ -14,7 +14,7 @@ INSTALLED_APPS = (
 
 # 2. make migrations
 
-# 3. add models you want to logging in settings, format:
+# 3. add the models you want to log in settings, format:
 
 ```
 #!python
@@ -26,7 +26,7 @@ LOGGING_MODELS = (
 ```
 
 # In many applications object.save() operation can be called many times per 1 request
-# per each .save() models_logging creates Change, so your database can fast raise to very huge size
+# per each .save() models_logging creates Change, so your database can quickly grow to a very large size
 # for prevent this "bug" you can add middleware in settings
 ```
 #!python
@@ -60,7 +60,7 @@ LOGGING_EXCLUDE = (
 ```
 
 
-# Also you can set up permission to logging records
+# Also you can set up permission for the logging records
 # Make func (it will be called in admin) or bool
 
 ```
@@ -76,7 +76,7 @@ LOGGING_CAN_CHANGE_CHANGES = True
 ```
 
 # in models you can set attributes:
- ```
+```
 #!python
 LOGGING_IGNORE_FIELDS   # to ignore changes of some fields
 
@@ -88,7 +88,7 @@ LOGGING_ONLY_FIELDS     # to save changes of only those fields
  
 # If you want to watch changes in admin/history of your object you can use models_logging.admin.HistoryAdmin
 
- ```
+```
 #!python
 from models_logging.admin import HistoryAdmin
 
