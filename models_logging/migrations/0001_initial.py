@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('contenttypes', '0002_remove_content_type_name'),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        migrations.swappable_dependency(settings.LOGGING_USER_MODEL),
     ]
 
     operations = [
@@ -57,6 +57,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='changes',
             name='user',
-            field=models.ForeignKey(blank=True, help_text='The user who created this changes.', null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL, verbose_name='User'),
+            field=models.ForeignKey(
+                blank=True,
+                help_text='The user who created this changes.',
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to=settings.LOGGING_USER_MODEL,
+                verbose_name='User'
+            ),
         ),
     ]
