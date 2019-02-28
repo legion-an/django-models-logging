@@ -11,6 +11,7 @@ from .models import Revision, Change
 
 try:
     from django.contrib.gis.geos import Point
+
     GEOS_POINT = True
 except ImproperlyConfigured:
     GEOS_POINT = False
@@ -95,7 +96,7 @@ def create_revision_with_changes(changes):
     :return:
     """
     comment = ', '.join([v['object_repr'] for v in changes])
-    rev = Revision.objects.create(comment='Изменения %s' % comment)
+    rev = Revision.objects.create(comment='Changes: %s' % comment)
     bulk = []
     for data in changes:
         data['revision_id'] = rev.id
