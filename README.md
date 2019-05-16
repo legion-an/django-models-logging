@@ -133,6 +133,21 @@ class YourModel(models.Model):
 Even if `name` was not changed it will always be in a log.
 
 
+You can also track specific fields ignoring others using `trackable_fields`:
+```python
+from django.db import models
+
+class YourModel(models.Model):
+    name = models.CharField(max_length=1000)
+    description = models.CharField(max_length=1000)
+        
+    class Logging:
+        trackable_fields = (
+            'name',
+        )
+```
+Change of `description` will be ignored. No log will be created.
+
 
 
 

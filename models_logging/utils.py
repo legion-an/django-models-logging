@@ -41,20 +41,27 @@ def model_to_dict(instance, action=None):
 
 
 def get_changed_data(obj, action=CHANGED):
+    trackable_fields = getattr(getattr(obj, 'Logging', object), 'trackable_fields', None)
     always_show = getattr(getattr(obj, 'Logging', object), 'always_show', [])
 
     d1 = model_to_dict(obj, action)
     if action == DELETED:
-        return [{'field': k, 'values': {'old': v}} for k, v in d1.items()]
+        return [
+            {
+                'field': k,
+                'values': {'old': v}
+            } for k, v in d1.items() if trackable_fields is None or k in trackable_fields
+        ]
     else:
         d2 = obj.__attrs
 
-        result = [
-            {
-                'field': k,
-                'values': {'old': d2[k] if action == CHANGED else None, 'new': v}
-            } for k, v in d1.items() if v != d2[k]
-        ]
+        result = []
+        for k, v in d1.items():
+            if (trackable_fields is None or k in trackable_fields) and v != d2[k]:
+                result.append({
+                    'field': k,
+                    'values': {'old': d2[k] if action == CHANGED else None, 'new': v}
+                })
 
         if result:
             tracked_fields = [_['field'] for _ in result]
@@ -110,7 +117,7 @@ def create_revision_with_changes(changes):
     :return:
     """
     comment = ', '.join([v['object_repr'] for v in changes])
-    rev = Revision.objects.create(comment='Изменения %s' % comment)
+    rev = Revision.objects.create(comment='Applied changes to: %s' % comment)
     bulk = []
     for data in changes:
         data['revision_id'] = rev.id
