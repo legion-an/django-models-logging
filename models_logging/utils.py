@@ -41,17 +41,32 @@ def model_to_dict(instance, action=None):
 
 
 def get_changed_data(obj, action=CHANGED):
+    always_show = getattr(getattr(obj, 'Logging', object), 'always_show', [])
+
     d1 = model_to_dict(obj, action)
     if action == DELETED:
         return [{'field': k, 'values': {'old': v}} for k, v in d1.items()]
     else:
         d2 = obj.__attrs
-        return [
+
+        result = [
             {
                 'field': k,
                 'values': {'old': d2[k] if action == CHANGED else None, 'new': v}
             } for k, v in d1.items() if v != d2[k]
         ]
+
+        if result:
+            tracked_fields = [_['field'] for _ in result]
+
+            for field_name in always_show:
+                if field_name not in tracked_fields:
+                    result.append({
+                        'field': field_name,
+                        'values': {'old': d1[field_name], 'new': d1[field_name]}
+                    })
+
+        return result
 
 
 @contextmanager
