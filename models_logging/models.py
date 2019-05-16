@@ -50,7 +50,7 @@ class Change(models.Model):
 
     date_created = models.DateTimeField(_("Date created"), db_index=True, auto_now_add=True,
                                         help_text=_("The date and time this changes was."))
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL,
+    user = models.ForeignKey(settings.LOGGING_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL,
                              verbose_name=_("User"), help_text=_("The user who created this changes."))
     object_id = models.IntegerField(help_text=_("Primary key of the model under version control."))
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,

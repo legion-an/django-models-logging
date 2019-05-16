@@ -1,5 +1,6 @@
 from django.conf import settings
 
+LOGGING_USER_MODEL = getattr(settings, 'LOGGING_USER_MODEL', None) or getattr(settings, 'AUTH_USER_MODEL', None)
 
 MODELS_FOR_LOGGING = getattr(settings, 'LOGGING_MODELS', None)
 MODELS_FOR_EXCLUDE = getattr(settings, 'LOGGING_EXCLUDE', [])
