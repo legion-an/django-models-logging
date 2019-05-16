@@ -117,6 +117,25 @@ class YourModel(models.Model):
 Please note, setting up *ignore_on_...* as True will cause impossibility of reverting your data.
 
 
+If you want some fields to be logged always then you can use the `always_show` field:
+```python
+from django.db import models
+
+class YourModel(models.Model):
+    name = models.CharField(max_length=1000)
+    description = models.CharField(max_length=1000)
+        
+    class Logging:
+        always_show = (
+            'name',
+        )
+```
+Even if `name` was not changed it will always be in a log.
+
+
+
+
+
 
 Version > 1.0 is incompatible with old versions (requires django >= 2.0)
 for django <= 2.0 use 0.9.7 version
