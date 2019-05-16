@@ -40,7 +40,9 @@ def save_model(sender, instance, using, **kwargs):
 
 def delete_model(sender, instance, using, **kwargs):
     if not _local.ignore(sender, instance):
-        _create_changes(instance, using, DELETED)
+        ignore_on_delete = getattr(getattr(instance, 'Logging', object), 'ignore_on_delete', False)
+        if not ignore_on_delete:
+            _create_changes(instance, using, DELETED)
 
 
 def _create_changes(object, using, action):

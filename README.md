@@ -101,6 +101,7 @@ class YourAdminModel(HistoryAdmin):
 If you want to exclude some actions from being logged in order to save storage or for some other reasons then you can attach a meta-class Logging and set the following attributes: 
 - ignore_on_create (False by default. Skips logging of `create` actions)
 - ignore_on_update (False by default. Skips logging of `update` actions)
+- ignore_on_delete (False by default. Skips logging of `delete` actions)
 
 ```python
 from django.db import models
@@ -111,6 +112,7 @@ class YourModel(models.Model):
     class Logging:
         ignore_on_create = True
         ignore_on_update = True
+        ignore_on_delete = True
 ```
 Please note, setting up *ignore_on_...* as True will cause impossibility of reverting your data.
 
