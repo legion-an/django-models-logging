@@ -29,9 +29,10 @@ def init_model_attrs(sender, instance, **kwargs):
 def save_model(sender, instance, using, **kwargs):
     if not _local.ignore(sender, instance):
         ignore_on_create = getattr(getattr(instance, 'Logging', object), 'ignore_on_create', False)
-        action = ADDED if kwargs.get('created') else CHANGED
+        ignore_on_update = getattr(getattr(instance, 'Logging', object), 'ignore_on_update', False)
 
-        if (action == ADDED and not ignore_on_create) or action == CHANGED:
+        action = ADDED if kwargs.get('created') else CHANGED
+        if (action == ADDED and not ignore_on_create) or (action == CHANGED and not ignore_on_update):
             diffs = get_changed_data(instance)
             if diffs:
                 _create_changes(instance, using, action)
