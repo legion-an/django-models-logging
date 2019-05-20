@@ -1,5 +1,7 @@
 from django.conf import settings
 
+LOGGING_WRITE_DATABASE = getattr(settings, 'LOGGING_WRITE_DATABASE', None)
+
 LOGGING_USER_MODEL = getattr(settings, 'LOGGING_USER_MODEL', None) or getattr(settings, 'AUTH_USER_MODEL', None)
 
 MODELS_FOR_LOGGING = getattr(settings, 'LOGGING_MODELS', None)

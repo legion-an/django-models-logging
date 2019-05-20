@@ -6,7 +6,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models.fields.files import FieldFile
 
 from . import _local
-from .settings import DELETED, CHANGED
+from .settings import DELETED, CHANGED, LOGGING_WRITE_DATABASE
 from .models import Revision, Change
 
 try:
@@ -116,10 +116,15 @@ def create_revision_with_changes(changes):
     :param changes: _local.stack_changes
     :return:
     """
+    if not changes:
+        return
+
+    using = changes[0]['db']
+
     comment = ', '.join([v['object_repr'] for v in changes])
     rev = Revision.objects.create(comment='Applied changes to: %s' % comment)
     bulk = []
     for data in changes:
         data['revision_id'] = rev.id
         bulk.append(Change(**data))
-    Change.objects.bulk_create(bulk)
+    Change.objects.using(LOGGING_WRITE_DATABASE or using).bulk_create(bulk)

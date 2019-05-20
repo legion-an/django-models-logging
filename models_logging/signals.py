@@ -6,7 +6,7 @@ from django.utils.module_loading import import_string
 
 from . import _local
 from .utils import get_changed_data, model_to_dict, ExtendedEncoder
-from .settings import ADDED, CHANGED, DELETED, MERGE_CHANGES, MIDDLEWARES
+from .settings import ADDED, CHANGED, DELETED, MERGE_CHANGES, MIDDLEWARES, LOGGING_WRITE_DATABASE
 from .models import Change
 from .settings import CUSTOM_JSON_ENCODER
 
@@ -76,7 +76,7 @@ def _create_changes(instance, using, action):
         if data['action'] == CHANGED:
             divide_on_update = getattr(getattr(instance, 'ModelLogging', object), 'divide_on_update', False)
             if divide_on_update:
-                Change.objects.bulk_create([
+                Change.objects.using(LOGGING_WRITE_DATABASE or using).bulk_create([
                     Change(**{
                         **data,
                         **{'changed_data': json.dumps([_])}
@@ -84,4 +84,4 @@ def _create_changes(instance, using, action):
                 ])
                 return
 
-        Change.objects.create(**data)
+        Change.objects.using(LOGGING_WRITE_DATABASE or using).create(**data)
