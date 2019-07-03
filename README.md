@@ -16,6 +16,15 @@ INSTALLED_APPS = (
 )
 ```
 
+If request.user is not represented by AUTH_USER_MODEL in your application then you can set up a custom Users model:
+
+```python
+LOGGING_USER_MODEL = 'yourapp.Users'
+# By default, LOGGING_USER_MODEL = AUTH_USER_MODEL
+```
+
+
+
 2. make migrations
 3. add the models you want to log in settings.py, format:
 ```python
