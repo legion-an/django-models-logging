@@ -4,9 +4,9 @@ files = ["templates/models_logging/*", "migrations/*", "management/commands/*"]
 
 setup(
     name='django-models-logging',
-    version='1.0.2',
+    version='1.0.3',
     packages=['models_logging'],
-    url='https://bitbucket.org/legion_an/django-models-logging',
+    url='https://github.com/legion-an/django-models-logging',
     package_data = {'models_logging' : files},
     license='MIT',
     author='legion',
@@ -31,6 +31,7 @@ setup(
         'Framework :: Django :: 1.10',
         'Framework :: Django :: 1.11',
         'Framework :: Django :: 2.0',
+        'Framework :: Django :: 3.0',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',

@@ -3,12 +3,11 @@ import json
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
-from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import python_2_unicode_compatible
+from six import python_2_unicode_compatible
 from django.urls import reverse
 
-from .settings import ADDED, CHANGED, DELETED
+from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL
 
 
 @python_2_unicode_compatible
@@ -50,7 +49,7 @@ class Change(models.Model):
 
     date_created = models.DateTimeField(_("Date created"), db_index=True, auto_now_add=True,
                                         help_text=_("The date and time this changes was."))
-    user = models.ForeignKey(settings.LOGGING_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL,
+    user = models.ForeignKey(LOGGING_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL,
                              verbose_name=_("User"), help_text=_("The user who created this changes."))
     object_id = models.IntegerField(help_text=_("Primary key of the model under version control."))
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,

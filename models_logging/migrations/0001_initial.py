@@ -6,6 +6,8 @@ from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 
+from models_logging.settings import LOGGING_USER_MODEL
+
 
 class Migration(migrations.Migration):
 
@@ -13,7 +15,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('contenttypes', '0002_remove_content_type_name'),
-        migrations.swappable_dependency(settings.LOGGING_USER_MODEL),
+        migrations.swappable_dependency(LOGGING_USER_MODEL),
     ]
 
     operations = [
@@ -62,7 +64,7 @@ class Migration(migrations.Migration):
                 help_text='A user who performed a change',
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
-                to=settings.LOGGING_USER_MODEL,
+                to=LOGGING_USER_MODEL,
                 verbose_name='User'
             )
         ),
