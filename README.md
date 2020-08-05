@@ -98,6 +98,11 @@ class YourAdminModel(HistoryAdmin):
 
 ```
 
+You can implement your own JSONEncoder and set path to it in django settings
+```python
+LOGGING_JSON_ENCODER = 'path.to.your.JsonEncoder'
+```
+
 
 Version > 1.0 is incompatible with old versions (requires django >= 2.0)
 for django <= 2.0 use 0.9.7 version

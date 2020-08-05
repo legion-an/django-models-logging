@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('date_created', models.DateTimeField(auto_now_add=True, db_index=True, help_text='The date and time this revision was created.', verbose_name='date created')),
-                ('comment', models.TextField(blank=True, help_text='A text comment on this revision.', null=True, verbose_name='comment')),
+                ('comment', models.TextField(blank=True, help_text='A text comment on this revision.', verbose_name='comment', default='')),
             ],
             options={
                 'verbose_name_plural': 'Revisions',

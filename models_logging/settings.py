@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.utils.module_loading import import_string
+
 
 LOGGING_USER_MODEL = getattr(settings, 'LOGGING_USER_MODEL', None) or getattr(settings, 'AUTH_USER_MODEL', None)
 
@@ -17,6 +19,15 @@ ADDED = 'added'
 CHANGED = 'changed'
 DELETED = 'deleted'
 
-CUSTOM_JSON_ENCODER = getattr(settings, 'CUSTOM_JSON_ENCODER', None)
-
 MIDDLEWARES = settings.MIDDLEWARE
+
+# TODO: Is not completed feature, do not use it!
+#  It will prevent error in database if User is not in the same database (because of ForeignKey)
+LOGGING_DATABASE = getattr(settings, 'LOGGING_DATABASE', 'default')
+
+USE_POSTGRES = False
+if 'postgresql' in settings.DATABASES[LOGGING_DATABASE]['ENGINE']:
+    USE_POSTGRES = True
+
+JSON_ENCODER_PATH = getattr(settings, 'LOGGING_JSON_ENCODER', 'models_logging.utils.ExtendedEncoder')
+JSON_ENCODER = import_string(JSON_ENCODER_PATH)

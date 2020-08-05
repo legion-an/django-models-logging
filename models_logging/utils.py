@@ -6,8 +6,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models.fields.files import FieldFile
 
 from . import _local
-from .settings import DELETED, CHANGED
-from .models import Revision, Change
+from .settings import DELETED, CHANGED, LOGGING_DATABASE
 
 try:
     from django.contrib.gis.geos import Point
@@ -95,10 +94,12 @@ def create_revision_with_changes(changes):
     :param changes: _local.stack_changes
     :return:
     """
+    from .models import Revision, Change
+
     comment = ', '.join([v['object_repr'] for v in changes])
-    rev = Revision.objects.create(comment='Changes: %s' % comment)
+    rev = Revision.objects.using(LOGGING_DATABASE).create(comment='Changes: %s' % comment)
     bulk = []
     for data in changes:
         data['revision_id'] = rev.id
         bulk.append(Change(**data))
-    Change.objects.bulk_create(bulk)
+    Change.objects.using(LOGGING_DATABASE).bulk_create(bulk)

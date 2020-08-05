@@ -38,7 +38,7 @@ def migrate_changed_data(apps, schema_editor):
     Change = apps.get_model('models_logging', 'Change')
     chunk = Change.objects.count() // 100
     perc = 0
-    for count, ch in enumerate(Change.objects.all()):
+    for count, ch in enumerate(Change.objects.using(schema_editor.connection.alias).all()):
         if count % chunk == 0:
             print('{}%'.format(perc))
             perc += 1
@@ -93,8 +93,4 @@ class Migration(migrations.Migration):
             name='serialized_data',
         ),
         migrations.RunPython(migrate_changed_data, migrations.RunPython.noop),
-        migrations.RemoveField(
-            model_name='change',
-            name='comment',
-        ),
     ]

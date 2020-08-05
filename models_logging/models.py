@@ -2,12 +2,13 @@ import json
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import JSONField
 from django.db import models, transaction
+from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from six import python_2_unicode_compatible
-from django.urls import reverse
 
-from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL
+from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, USE_POSTGRES, JSON_ENCODER
 
 
 @python_2_unicode_compatible
@@ -21,7 +22,7 @@ class Revision(models.Model):
 
     date_created = models.DateTimeField(_("date created"), db_index=True, auto_now_add=True,
                                         help_text=_("The date and time this revision was created."))
-    comment = models.TextField(_("comment"), blank=True, null=True, help_text=_("A text comment on this revision."))
+    comment = models.TextField(_("comment"), blank=True, help_text=_("A text comment on this revision."))
 
     def __str__(self):
         return 'Revision %s of <%s>' % (self.id, self.date_created.strftime('%Y-%m-%d %H:%M:%S.%f'))
@@ -57,7 +58,12 @@ class Change(models.Model):
     object = GenericForeignKey(ct_field="content_type", fk_field="object_id")
     # TODO: db is not used yet
     db = models.CharField(max_length=191, help_text=_("The database the model under version control is stored in."))
-    changed_data = models.TextField(blank=True, null=True, help_text=_("The old data of changed fields."))
+
+    if USE_POSTGRES:
+        changed_data = JSONField(blank=True, null=True, encoder=JSON_ENCODER)
+    else:
+        changed_data = models.TextField(blank=True, null=True, help_text=_("The old data of changed fields."))
+
     object_repr = models.TextField(help_text=_("A string representation of the object."))
     revision = models.ForeignKey(Revision, blank=True, null=True, verbose_name='to revision', on_delete=models.CASCADE)
     action = models.CharField(_("Action"), choices=ACTIONS, help_text=_('added|changed|deleted'), max_length=7)
@@ -126,4 +132,6 @@ class Change(models.Model):
         return reverse('admin:models_logging_change_change', args=[self.id])
 
     def display_changed_data(self):
+        if USE_POSTGRES:
+            return self.changed_data
         return json.loads(self.changed_data)
