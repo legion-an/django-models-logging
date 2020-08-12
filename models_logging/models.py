@@ -114,7 +114,7 @@ class Change(models.Model):
 
     def revert(self):
         with transaction.atomic():
-            data = {data['field']: data['values'].get('old') for data in json.loads(self.changed_data)}
+            data = {field: values.get('old') for field, values in self.display_changed_data().items()}
             if self.action == ADDED:
                 self.object.delete()
             elif self.action == CHANGED:

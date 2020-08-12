@@ -43,15 +43,12 @@ def model_to_dict(instance, action=None):
 def get_changed_data(obj, action=CHANGED):
     d1 = model_to_dict(obj, action)
     if action == DELETED:
-        return [{'field': k, 'values': {'old': v}} for k, v in d1.items()]
+        return {k: {'old': v} for k, v in d1.items()}
     else:
         d2 = obj.__attrs
-        return [
-            {
-                'field': k,
-                'values': {'old': d2[k] if action == CHANGED else None, 'new': v}
-            } for k, v in d1.items() if v != d2[k]
-        ]
+        return {
+            k: {'old': d2[k] if action == CHANGED else None, 'new': v} for k, v in d1.items() if v != d2[k]
+        }
 
 
 @contextmanager

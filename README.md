@@ -1,7 +1,23 @@
 # This package is for logging every changes in your models in this format:
 ```json
+{
+field_name: {
+    "old":  old_value, "new":  new_value | None if this is delete action
+  }
+}
+```
 
-[{"field": "price", "values": {"old": "2425", "new": "645"}}, {"field": "price_final", "values": {"old": "2425", "new": "645"}}]
+Example
+```json
+
+{
+  "price": {
+    "old": "2425", "new": "645"
+  }, 
+  "name": {
+    "old":  "ProductName", "new": "NewProductNmae"
+  }
+}
 ```
 
 # USING
