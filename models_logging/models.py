@@ -52,7 +52,7 @@ class Change(models.Model):
                                         help_text=_("The date and time this changes was."))
     user = models.ForeignKey(LOGGING_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL,
                              verbose_name=_("User"), help_text=_("The user who created this changes."))
-    object_id = models.IntegerField(help_text=_("Primary key of the model under version control."))
+    object_id = models.CharField(max_length=400, help_text=_("Primary key of the model under version control."))
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
                                      help_text="Content type of the model under version control.")
     object = GenericForeignKey(ct_field="content_type", fk_field="object_id")

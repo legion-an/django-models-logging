@@ -14,7 +14,8 @@ def init_model_attrs(sender, instance, **kwargs):
     if not _local.ignore(sender, instance):
         model_dict = model_to_dict(instance)
         # for rest_framework
-        if not instance.id:
+
+        if getattr(instance, sender._meta.pk.name):
             model_dict = {k: None for k, v in model_dict.items()}
 
         instance.__attrs = model_dict
@@ -41,9 +42,9 @@ def _create_changes(object, using, action):
     user_id = _local.user.pk if _local.user and _local.user.is_authenticated else None
     content_type_id = ContentType.objects.get_for_model(object._meta.model).pk
     data = {'db': using, 'object_repr': force_text(object), 'action': action, 'user_id': user_id,
-            'changed_data': changed_data, 'object_id': object.pk, 'content_type_id': content_type_id}
+            'changed_data': changed_data, 'object_id': getattr(object, object._meta.pk.name), 'content_type_id': content_type_id}
     if MERGE_CHANGES and 'models_logging.middleware.LoggingStackMiddleware' in MIDDLEWARES:
-        key = (object.pk, content_type_id)
+        key = (getattr(object, object._meta.pk.name), content_type_id)
         old_action = _local.stack_changes.get(key, {}).get('action')
         if old_action == ADDED:
             data['action'] = ADDED

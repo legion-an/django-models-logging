@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='change',
             name='object_id',
-            field=models.IntegerField(help_text='Primary key of the model under version control.'),
+            field=models.CharField(help_text='Primary key of the model under version control.', max_length=400),
         ),
     ]
