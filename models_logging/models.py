@@ -2,7 +2,7 @@ import json
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
