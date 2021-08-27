@@ -120,11 +120,7 @@ LOGGING_JSON_ENCODER = 'path.to.your.JsonEncoder'
 ```
 
 
-Version > 1.0 is incompatible with old versions (requires django >= 2.0)
+Version > 2.0 is incompatible with old versions (requires django >= 3.1)
 for django <= 2.0 use 0.9.7 version
- 
 
-
-PS: It's not a backup your database, don't try to revert "huge" Revisions
-Recovering changes it's at least 1 hit to database (save or delete),
-if you run recovering thousands of changes this will be very slowly
+PS: This module is not optimal as a backup for your database. If you try to recover thousands of changes this will be very slow.
