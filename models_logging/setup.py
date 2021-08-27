@@ -1,7 +1,7 @@
 from django.db.models.signals import post_init, post_save, post_delete
 from django.apps.registry import apps
 
-from .settings import MODELS_FOR_LOGGING, MODELS_FOR_EXCLUDE, LOGGING_DATABASE
+from .settings import MODELS_FOR_LOGGING, MODELS_FOR_EXCLUDE
 from .signals import init_model_attrs, save_model, delete_model
 
 

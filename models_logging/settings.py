@@ -25,9 +25,5 @@ MIDDLEWARES = settings.MIDDLEWARE
 #  It will prevent error in database if User is not in the same database (because of ForeignKey)
 LOGGING_DATABASE = getattr(settings, 'LOGGING_DATABASE', 'default')
 
-USE_POSTGRES = False
-if 'postgresql' in settings.DATABASES[LOGGING_DATABASE]['ENGINE']:
-    USE_POSTGRES = True
-
 JSON_ENCODER_PATH = getattr(settings, 'LOGGING_JSON_ENCODER', 'models_logging.utils.ExtendedEncoder')
 JSON_ENCODER = import_string(JSON_ENCODER_PATH)

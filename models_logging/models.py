@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from six import python_2_unicode_compatible
 
-from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, USE_POSTGRES, JSON_ENCODER
+from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, JSON_ENCODER
 
 
 @python_2_unicode_compatible
@@ -59,11 +59,8 @@ class Change(models.Model):
     # TODO: db is not used yet
     db = models.CharField(max_length=191, help_text=_("The database the model under version control is stored in."))
 
-    if USE_POSTGRES:
-        changed_data = JSONField(blank=True, null=True, encoder=JSON_ENCODER)
-    else:
-        changed_data = models.TextField(blank=True, null=True, help_text=_("The old data of changed fields."))
-
+    changed_data = JSONField(blank=True, null=True, encoder=JSON_ENCODER)
+    
     object_repr = models.TextField(help_text=_("A string representation of the object."))
     revision = models.ForeignKey(Revision, blank=True, null=True, verbose_name='to revision', on_delete=models.CASCADE)
     action = models.CharField(_("Action"), choices=ACTIONS, help_text=_('added|changed|deleted'), max_length=7)
@@ -132,6 +129,4 @@ class Change(models.Model):
         return reverse('admin:models_logging_change_change', args=[self.id])
 
     def display_changed_data(self):
-        if USE_POSTGRES:
-            return self.changed_data
-        return json.loads(self.changed_data)
+        return self.changed_data
