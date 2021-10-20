@@ -1,9 +1,9 @@
 # This package is for logging every changes in your models in this format:
-```json
+```yaml
 {
-field_name: {
-    "old":  old_value, "new":  new_value | None if this is delete action
-  }
+    field_name: {
+        "old":  `old_value`, "new":  `new_value` | `None` if this is delete action
+    }
 }
 ```
 

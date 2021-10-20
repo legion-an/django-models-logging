@@ -9,10 +9,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--ctype', type=str, help='ids by comma of content_type wich will be delete'
+            '--ctype', type=str, help='ids by comma of content_types which will be deleted'
         )
         parser.add_argument(
-            '--exclude', type=str, help='ids by comma of content_type wich will not! be delete'
+            '--ctype-exclude', type=str, help='ids by comma of content_types which will be excluded from deletion'
         )
         parser.add_argument(
             '--date_lte', type=str, help='The changes started before that date will be removed, format (yyyy.mm.dd)',

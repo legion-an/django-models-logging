@@ -14,7 +14,7 @@ def init_model_attrs(sender, instance, **kwargs):
     if not _local.ignore(sender, instance):
         model_dict = model_to_dict(instance)
         # for rest_framework
-        if not instance.id:
+        if not instance.pk:
             model_dict = {k: None for k, v in model_dict.items()}
 
         instance.__attrs = model_dict
