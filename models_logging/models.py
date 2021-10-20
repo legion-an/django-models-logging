@@ -1,14 +1,21 @@
 import json
 
+from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, USE_POSTGRES, JSON_ENCODER
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.fields import JSONField
+
+if USE_POSTGRES:
+    from django.contrib.postgres.fields import JSONField
+
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from six import python_2_unicode_compatible
 
-from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, USE_POSTGRES, JSON_ENCODER
+
+def get_encoder(*args, **kwargs):
+    return JSON_ENCODER(*args, **kwargs)
 
 
 @python_2_unicode_compatible
@@ -60,7 +67,7 @@ class Change(models.Model):
     db = models.CharField(max_length=191, help_text=_("The database the model under version control is stored in."))
 
     if USE_POSTGRES:
-        changed_data = JSONField(blank=True, null=True, encoder=JSON_ENCODER)
+        changed_data = JSONField(blank=True, null=True, encoder=get_encoder)
     else:
         changed_data = models.TextField(blank=True, null=True, help_text=_("The old data of changed fields."))
 
@@ -132,6 +139,6 @@ class Change(models.Model):
         return reverse('admin:models_logging_change_change', args=[self.id])
 
     def display_changed_data(self):
-        if USE_POSTGRES:
-            return self.changed_data
-        return json.loads(self.changed_data)
+        if isinstance(self.changed_data, str):
+            return json.loads(self.changed_data)
+        return self.changed_data

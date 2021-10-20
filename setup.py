@@ -4,10 +4,10 @@ files = ["templates/models_logging/*", "migrations/*", "management/commands/*"]
 
 setup(
     name='django-models-logging',
-    version='1.0.6',
+    version='1.0.7',
     packages=['models_logging'],
     url='https://github.com/legion-an/django-models-logging',
-    package_data = {'models_logging' : files},
+    package_data={'models_logging' : files},
     license='MIT',
     author='legion',
     author_email='legion.andrey.89@gmail.com',
