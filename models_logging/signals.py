@@ -1,5 +1,3 @@
-import json
-
 from django.utils.encoding import force_text
 from django.contrib.contenttypes.models import ContentType
 
@@ -7,7 +5,6 @@ from . import _local
 from .utils import get_changed_data, model_to_dict
 from .settings import ADDED, CHANGED, DELETED, MERGE_CHANGES, MIDDLEWARES, LOGGING_DATABASE
 from .models import Change
-from .settings import USE_POSTGRES, JSON_ENCODER
 
 
 def init_model_attrs(sender, instance, **kwargs):
