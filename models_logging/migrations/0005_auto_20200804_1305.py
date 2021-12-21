@@ -19,9 +19,6 @@ operations = [
         model_name='change',
         name='comment',
     ),
-]
-
-operations.append(
     migrations.AlterField(
         model_name='change',
         name='changed_data',
@@ -31,8 +28,7 @@ operations.append(
             null=True
         ),
     )
-)
-
+]
 
 class Migration(migrations.Migration):
 
