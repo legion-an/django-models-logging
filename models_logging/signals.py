@@ -32,8 +32,6 @@ def delete_model(sender, instance, using, **kwargs):
 
 def _create_changes(object, using, action):
     changed_data = get_changed_data(object, action)
-    if not USE_POSTGRES:
-        changed_data = json.dumps(changed_data, cls=JSON_ENCODER)
 
     user_id = _local.user.pk if _local.user and _local.user.is_authenticated else None
     content_type_id = ContentType.objects.get_for_model(object._meta.model).pk

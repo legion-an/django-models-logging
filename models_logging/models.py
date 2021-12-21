@@ -1,12 +1,9 @@
 import json
 
-from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, USE_POSTGRES, JSON_ENCODER
+from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, JSON_ENCODER
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-
-if USE_POSTGRES:
-    from django.contrib.postgres.fields import JSONField
 
 from django.db import models, transaction
 from django.urls import reverse
@@ -68,10 +65,7 @@ class Change(models.Model):
     # TODO: db is not used yet
     db = models.CharField(max_length=191, help_text=_("The database the model under version control is stored in."))
 
-    if USE_POSTGRES:
-        changed_data = JSONField(blank=True, null=True, encoder=get_encoder)
-    else:
-        changed_data = models.TextField(blank=True, null=True, help_text=_("The old data of changed fields."))
+    changed_data = models.JSONField(blank=True, null=True, encoder=get_encoder)
 
     object_repr = models.TextField(help_text=_("A string representation of the object."))
     revision = models.ForeignKey(Revision, blank=True, null=True, verbose_name='to revision', on_delete=models.CASCADE)
