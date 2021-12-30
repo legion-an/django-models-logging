@@ -76,8 +76,7 @@ class ChangeAdmin(admin.ModelAdmin):
                     ),
                     obj.object)
                 )
-        except Exception as err:
-            print(err)
+        except Exception:
             return None
 
     def has_add_permission(self, request):
