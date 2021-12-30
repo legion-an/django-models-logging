@@ -1,7 +1,7 @@
 import json
 from functools import update_wrapper
 
-from django.urls import reverse
+from django.urls import reverse, re_path
 from django.core.exceptions import PermissionDenied
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
@@ -126,7 +126,7 @@ class ChangeAdmin(admin.ModelAdmin):
             return update_wrapper(wrapper, view)
 
         urls = super(ChangeAdmin, self).get_urls()
-        urls.insert(0, url(r'^(.+)/revert/$', wrap(self.revert_view), name='revert_changes'),)
+        urls.insert(0, re_path(r'^(.+)/revert/$', wrap(self.revert_view), name='revert_changes'),)
         return urls
 
 
@@ -188,7 +188,7 @@ class RevisionAdmin(admin.ModelAdmin):
             return update_wrapper(wrapper, view)
 
         urls = super(RevisionAdmin, self).get_urls()
-        urls.insert(0, url(r'^(.+)/revert/$', wrap(self.revert_view), name='revert_revision'),)
+        urls.insert(0, re_path(r'^(.+)/revert/$', wrap(self.revert_view), name='revert_revision'),)
         return urls
 
     def revert_view(self, request, object_id, extra_context=None):
