@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.db import connections
 from django.utils.module_loading import import_string
 
 

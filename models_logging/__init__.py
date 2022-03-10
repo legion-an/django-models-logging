@@ -14,7 +14,7 @@ class _Local(local):
         self.ignore_changes = False
         self.stack_changes = {}
 
-    def ignore(self, sender, instance):
+    def ignore(self, sender, instance) -> bool:
         if isinstance(self.ignore_changes, (tuple, list)) and sender in self.ignore_changes:
             return True
         elif self.ignore_changes is True:
@@ -23,6 +23,7 @@ class _Local(local):
             # if does'nt ignore defered_fields
             # we will catch excpetion (max recursion depth)
             return True
+        return False
 
 
 _local = _Local()
