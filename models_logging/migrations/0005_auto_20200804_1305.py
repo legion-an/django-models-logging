@@ -18,7 +18,7 @@ operations = [
     migrations.RemoveField(
         model_name='change',
         name='comment',
-    )
+    ),
 ]
 
 class Migration(migrations.Migration):
