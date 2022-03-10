@@ -76,7 +76,7 @@ class ChangeAdmin(admin.ModelAdmin):
                 obj.object)
             )
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, *args, **kwargs):
         return
 
     def has_delete_permission(self, request, obj=None):
@@ -139,7 +139,7 @@ class ChangeInline(admin.TabularInline):
     def get_queryset(self, request):
         return super(ChangeInline, self).get_queryset(request).select_related('content_type')
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, *args, **kwargs):
         return False
 
     def has_delete_permission(self, request, obj=None):
@@ -161,7 +161,7 @@ class RevisionAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return CAN_DELETE_REVISION(request, obj) if callable(CAN_DELETE_REVISION) else CAN_DELETE_REVISION
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, *args, **kwargs):
         return
 
     def revert_is_allowed(self, request, obj):
