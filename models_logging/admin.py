@@ -79,6 +79,7 @@ class ChangeAdmin(admin.ModelAdmin):
         except AttributeError:
             return None
 
+
     def has_add_permission(self, request, *args, **kwargs):
         return
 
