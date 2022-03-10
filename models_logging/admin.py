@@ -7,11 +7,11 @@ from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.contrib.admin.filters import RelatedOnlyFieldListFilter
 from django.contrib import messages
-from django.conf.urls import url
+from django.urls import re_path
 from django.db import transaction
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.html import format_html
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 
 from .settings import CAN_DELETE_CHANGES, CAN_CHANGE_CHANGES, CAN_DELETE_REVISION, REVERT_IS_ALLOWED, \
     CHANGES_REVISION_LIMIT, ADDED
@@ -126,7 +126,7 @@ class ChangeAdmin(admin.ModelAdmin):
             return update_wrapper(wrapper, view)
 
         urls = super(ChangeAdmin, self).get_urls()
-        urls.insert(0, url(r'^(.+)/revert/$', wrap(self.revert_view), name='revert_changes'),)
+        urls.insert(0, re_path(r'^(.+)/revert/$', wrap(self.revert_view), name='revert_changes'),)
         return urls
 
 
@@ -188,7 +188,7 @@ class RevisionAdmin(admin.ModelAdmin):
             return update_wrapper(wrapper, view)
 
         urls = super(RevisionAdmin, self).get_urls()
-        urls.insert(0, url(r'^(.+)/revert/$', wrap(self.revert_view), name='revert_revision'),)
+        urls.insert(0, re_path(r'^(.+)/revert/$', wrap(self.revert_view), name='revert_revision'),)
         return urls
 
     def revert_view(self, request, object_id, extra_context=None):
@@ -200,7 +200,7 @@ class RevisionAdmin(admin.ModelAdmin):
             try:
                 with transaction.atomic():
                     obj.revert()
-                    messages.success(request, 'Changes of %s was reverted' % force_text(obj))
+                    messages.success(request, 'Changes of %s was reverted' % force_str(obj))
                     return redirect(reverse('admin:models_logging_revision_changelist'))
             except Exception as err:
                 messages.warning(request, 'Error: %s' % err)
@@ -208,7 +208,7 @@ class RevisionAdmin(admin.ModelAdmin):
         context = {
             'object': obj,
             'opts': self.model._meta,
-            'object_name': force_text(obj),
+            'object_name': force_str(obj),
             'changes': obj.change_set.all()[:CHANGES_REVISION_LIMIT],
             'limit': CHANGES_REVISION_LIMIT,
             'changes_count': obj.change_set.count(),

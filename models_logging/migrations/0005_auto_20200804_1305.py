@@ -19,15 +19,6 @@ operations = [
         model_name='change',
         name='comment',
     ),
-    migrations.AlterField(
-        model_name='change',
-        name='changed_data',
-        field=models.JSONField(
-            blank=True,
-            encoder=models_logging.models.get_encoder,
-            null=True
-        ),
-    )
 ]
 
 class Migration(migrations.Migration):
