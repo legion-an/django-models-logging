@@ -1,4 +1,6 @@
-# This package is for logging every changes in your models in this format:
+# Django Models Logging
+
+This package is for logging every changes in your models in this format:
 
 ```yaml
 {
