@@ -2,7 +2,7 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import models_logging.models
-from models_logging.settings import LOGGING_USER_MODEL, USE_POSTGRES
+from models_logging.settings import LOGGING_USER_MODEL
 
 operations = [
     migrations.AlterField(
@@ -18,24 +18,8 @@ operations = [
     migrations.RemoveField(
         model_name='change',
         name='comment',
-    ),
-]
-
-if USE_POSTGRES:
-    import django.contrib.postgres.fields.jsonb
-
-    operations.append(
-        migrations.AlterField(
-            model_name='change',
-            name='changed_data',
-            field=django.contrib.postgres.fields.jsonb.JSONField(
-                blank=True,
-                encoder=models_logging.models.get_encoder,
-                null=True
-            ),
-        )
     )
-
+]
 
 class Migration(migrations.Migration):
 

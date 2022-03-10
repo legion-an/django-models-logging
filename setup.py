@@ -19,7 +19,7 @@ setup(
         'django history models',
     ],
     install_requires=[
-        "django>=2.0",
+        "django>=3.1",
         "python-dateutil",
     ],
     classifiers=[
