@@ -30,7 +30,9 @@ Example
 Add 'models_logging' at the end of INSTALLED_APPS in settings.py!
 This is important because models connect to save and init signals when apps is ready
 
-1.
+1. Install using pip - `pip install django-models-logging`
+
+2.
 
 ```python
 INSTALLED_APPS = (
@@ -46,8 +48,8 @@ LOGGING_USER_MODEL = 'yourapp.Users'
 # By default, LOGGING_USER_MODEL = AUTH_USER_MODEL
 ```
 
-2. make migrations
-3. add the models you want to log in settings.py, format:
+3. make migrations
+4. add the models you want to log in settings.py, format:
 
 ```python
 LOGGING_MODELS = (
