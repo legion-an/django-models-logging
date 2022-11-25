@@ -70,6 +70,7 @@ class Change(models.Model):
     object_repr = models.TextField(help_text=_("A string representation of the object."))
     revision = models.ForeignKey(Revision, blank=True, null=True, verbose_name='to revision', on_delete=models.CASCADE)
     action = models.CharField(_("Action"), choices=ACTIONS, help_text=_('added|changed|deleted'), max_length=7)
+    extras = models.JSONField(blank=True, default=dict, encoder=get_encoder, null=True)
 
     def __str__(self):
         return "Changes %s of %s <%s>" % (self.id, self.object_repr, self.date_created.strftime('%Y-%m-%d %H:%M:%S.%f'))
@@ -138,3 +139,7 @@ class Change(models.Model):
         if isinstance(self.changed_data, str):
             return json.loads(self.changed_data)
         return self.changed_data
+
+    @classmethod
+    def user_field_model(cls):
+        return cls._meta.get_field('user').related_model

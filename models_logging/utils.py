@@ -1,12 +1,13 @@
-# Helpers
 from contextlib import contextmanager
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ImproperlyConfigured
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models.fields.files import FieldFile
 
-from . import _local
-from .settings import DELETED, CHANGED, LOGGING_DATABASE
+from models_logging import _local, settings
+from models_logging.helpers import create_revision_with_changes, init_change
+from models_logging.models import Change
 
 try:
     from django.contrib.gis.geos import Point
@@ -24,30 +25,6 @@ class ExtendedEncoder(DjangoJSONEncoder):
         if isinstance(o, FieldFile):
             return getattr(o, 'name', None)
         return super(ExtendedEncoder, self).default(o)
-
-
-def model_to_dict(instance, action=None):
-    opts = instance._meta
-    ignore_fields = getattr(instance, 'LOGGING_IGNORE_FIELDS', [])
-    only_fields = getattr(instance, 'LOGGING_ONLY_FIELDS', [])
-    if action != DELETED and only_fields:
-        fnames = [f.attname for f in opts.fields if f.name in only_fields]
-    elif action != DELETED and ignore_fields:
-        fnames = [f.attname for f in opts.fields if f.name not in ignore_fields]
-    else:
-        fnames = [f.attname for f in opts.fields]
-    data = {f: getattr(instance, f, None) for f in fnames}
-    return data
-
-
-def get_changed_data(obj, action=CHANGED):
-    d1 = model_to_dict(obj, action)
-    if action == DELETED:
-        return {k: {'old': v} for k, v in d1.items()}
-    d2 = obj.__attrs
-    return {
-        k: {'old': d2[k] if action == CHANGED else None, 'new': v} for k, v in d1.items() if v != d2[k]
-    }
 
 
 @contextmanager
@@ -79,23 +56,46 @@ def create_merged_changes():
     :return:
     """
     _local.stack_changes = {}
+    _local.merge_changes_allowed = True
+
     yield
+
     create_revision_with_changes(_local.stack_changes.values())
+
     _local.stack_changes = {}
+    _local.merge_changes_allowed = False
 
 
-def create_revision_with_changes(changes):
-    """
+def create_changes_for_update(queryset, **fields):
+    def _get_values(qs):
+        return {item["pk"]: item for item in qs.values("pk", *fields)}
 
-    :param changes: _local.stack_changes
-    :return:
-    """
-    from .models import Revision, Change
+    old_values = _get_values(queryset)
+    rows = queryset.update(**fields)
+    new_values = _get_values(queryset.model.objects.filter(id__in=old_values.keys()))
 
-    comment = ', '.join([v['object_repr'] for v in changes])
-    rev = Revision.objects.using(LOGGING_DATABASE).create(comment='Changes: %s' % comment)
-    bulk = []
-    for data in changes:
-        data['revision_id'] = rev.id
-        bulk.append(Change(**data))
-    Change.objects.using(LOGGING_DATABASE).bulk_create(bulk)
+    content_type = ContentType.objects.get_for_model(queryset.model)
+
+    changes = []
+    for pk, item in old_values.items():
+        changed_data = {
+            field: {"old": old_value, "new": new_values[pk][field]}
+            for field, old_value in item.items() if field != 'pk'
+        }
+        changes.append(
+            init_change(
+                item,
+                changed_data,
+                settings.CHANGED,
+                content_type,
+                f"Update of {queryset.model.__name__} (pk={pk})",
+            )
+        )
+
+    if settings.MERGE_CHANGES and _local.merge_changes_allowed:
+        for change in changes:
+            _local.put_change_to_stack(change)
+    else:
+        Change.objects.using(settings.LOGGING_DATABASE).bulk_create(changes)
+
+    return rows
