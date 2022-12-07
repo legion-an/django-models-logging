@@ -40,5 +40,6 @@ setup(
         'Programming Language :: Python :: 3',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Software Development :: Libraries :: Python Modules',
-    ]
+    ],
+    long_description='https://github.com/legion-an/django-models-logging/blob/master/README.md'
 )
