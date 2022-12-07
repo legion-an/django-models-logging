@@ -57,12 +57,13 @@ class HistoryAdmin(admin.ModelAdmin):
 
 
 class ChangeAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'content_type', 'get_comment', 'get_link_admin_object']
+    list_display = ['__str__', 'content_type', 'get_comment', 'get_link_admin_object', 'user']
     list_filter = [('content_type', RelatedOnlyFieldListFilter), 'date_created', 'action']
     change_form_template = 'models_logging/change_form.html'
     revert_form_template = 'models_logging/revert_changes_confirmation.html'
     search_fields = ['=object_id', '=id', '=revision__id']
     raw_id_fields = ['revision']
+    list_select_related = ('user', 'content_type')
 
     def get_comment(self, obj):
         return '%s: %s' % (obj.action, obj.object_repr)
@@ -78,7 +79,6 @@ class ChangeAdmin(admin.ModelAdmin):
                 )
         except AttributeError:
             return None
-
 
     def has_add_permission(self, request, *args, **kwargs):
         return
@@ -160,7 +160,7 @@ class RevisionAdmin(admin.ModelAdmin):
     search_fields = ['=id', '=changes__id']
 
     def get_queryset(self, request):
-        return super(RevisionAdmin, self).get_queryset(request)
+        return super(RevisionAdmin, self).get_queryset(request).prefetch_related('change_set')
 
     def has_delete_permission(self, request, obj=None):
         return CAN_DELETE_REVISION(request, obj) if callable(CAN_DELETE_REVISION) else CAN_DELETE_REVISION

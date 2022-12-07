@@ -1,10 +1,8 @@
-from django.utils.encoding import force_str
 from django.contrib.contenttypes.models import ContentType
 
 from . import _local
-from .utils import get_changed_data, model_to_dict
-from .settings import ADDED, CHANGED, DELETED, MERGE_CHANGES, MIDDLEWARES, LOGGING_DATABASE
-from .models import Change
+from .helpers import model_to_dict, get_changed_data, init_change
+from .settings import ADDED, CHANGED, DELETED, MERGE_CHANGES, LOGGING_DATABASE
 
 
 def init_model_attrs(sender, instance, **kwargs):
@@ -22,26 +20,25 @@ def save_model(sender, instance, using, **kwargs):
         diffs = get_changed_data(instance)
         if diffs:
             action = ADDED if kwargs.get('created') else CHANGED
-            _create_changes(instance, using, action)
+            _create_changes(instance, action)
 
 
 def delete_model(sender, instance, using, **kwargs):
     if not _local.ignore(sender, instance):
-        _create_changes(instance, using, DELETED)
+        _create_changes(instance, DELETED)
 
 
-def _create_changes(object, using, action):
+def _create_changes(object, action):
     changed_data = get_changed_data(object, action)
 
-    user_id = _local.user.pk if _local.user and _local.user.is_authenticated else None
-    content_type_id = ContentType.objects.get_for_model(object._meta.model).pk
-    data = {'db': using, 'object_repr': force_str(object), 'action': action, 'user_id': user_id,
-            'changed_data': changed_data, 'object_id': object.pk, 'content_type_id': content_type_id}
-    if MERGE_CHANGES and 'models_logging.middleware.LoggingStackMiddleware' in MIDDLEWARES:
-        key = (object.pk, content_type_id)
-        old_action = _local.stack_changes.get(key, {}).get('action')
-        if old_action == ADDED:
-            data['action'] = ADDED
-        _local.stack_changes[key] = data
+    change = init_change(
+        object,
+        changed_data,
+        action,
+        ContentType.objects.get_for_model(object._meta.model)
+    )
+
+    if MERGE_CHANGES and _local.merge_changes_allowed:
+        _local.put_change_to_stack(change)
     else:
-        Change.objects.using(LOGGING_DATABASE).create(**data)
+        change.save(using=LOGGING_DATABASE)

@@ -27,3 +27,10 @@ LOGGING_DATABASE = getattr(settings, 'LOGGING_DATABASE', 'default')
 
 JSON_ENCODER_PATH = getattr(settings, 'LOGGING_JSON_ENCODER', 'models_logging.utils.ExtendedEncoder')
 JSON_ENCODER = import_string(JSON_ENCODER_PATH)
+
+GET_CHANGE_EXTRAS_PATH = getattr(
+    settings,
+    'LOGGING_GET_CHANGE_EXTRAS_FUNC',
+    'models_logging.utils.get_change_extras'
+)
+GET_CHANGE_EXTRAS_FUNC = import_string(GET_CHANGE_EXTRAS_PATH)
