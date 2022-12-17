@@ -1,9 +1,10 @@
 import json
 
-from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, JSON_ENCODER
+from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, JSON_ENCODER_PATH
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.utils.module_loading import import_string
 
 from django.db import models, transaction
 from django.urls import reverse
@@ -12,7 +13,8 @@ from six import python_2_unicode_compatible
 
 
 def get_encoder(*args, **kwargs):
-    return JSON_ENCODER(*args, **kwargs)
+    encoder_cls = import_string(JSON_ENCODER_PATH)
+    return encoder_cls(*args, **kwargs)
 
 
 @python_2_unicode_compatible

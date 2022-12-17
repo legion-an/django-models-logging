@@ -2,6 +2,7 @@ from typing import Union, List
 
 from django.db.models.base import ModelBase
 from django.utils.encoding import force_str
+from django.utils.module_loading import import_string
 
 from models_logging import settings, _local
 from models_logging.models import Change, Revision
@@ -82,5 +83,8 @@ def init_change(
         changed_data=changed_data,
         object_id=object_pk,
         content_type=content_type,
-        extras=settings.GET_CHANGE_EXTRAS_FUNC(object, settings.CHANGED),
+        extras=CHANGE_EXTRAS_FUNC(object, settings.CHANGED),
     )
+
+
+CHANGE_EXTRAS_FUNC = import_string(settings.GET_CHANGE_EXTRAS_PATH)
