@@ -32,7 +32,7 @@ class LoggingStackMiddleware(MiddlewareMixin):
 
 MERGE_CHANGES_ALLOWED = False
 for middleware in settings.MIDDLEWARE:
-    middleware_cls = import_string(middleware)(None)
+    middleware_cls = import_string(middleware)(object)
 
     if isinstance(middleware_cls, LoggingStackMiddleware):
         MERGE_CHANGES_ALLOWED = True
