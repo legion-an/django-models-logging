@@ -70,12 +70,15 @@ class ChangeAdmin(admin.ModelAdmin):
 
     def get_link_admin_object(self, obj):
         try:
-            if obj.object and obj.content_type.model_class() in admin.site._registry:
-                return format_html('<a href="%s">%s</a>' % (
-                    reverse('admin:%s_%s_change' % (obj.content_type.app_label, obj.content_type.model),
+            if obj.object_id and obj.content_type.model_class() in admin.site._registry:
+                return format_html(
+                    '<a href="%s">%s</a>' % (
+                        reverse(
+                            'admin:%s_%s_change' % (obj.content_type.app_label, obj.content_type.model),
                             args=[obj.object_id]
-                    ),
-                    obj.object)
+                        ),
+                        obj.object_repr
+                    )
                 )
         except AttributeError:
             return None
