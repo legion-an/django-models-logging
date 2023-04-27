@@ -31,7 +31,7 @@
                                 </th>
                                 <td>
                                     {% if change.user %}
-                                        {{ change.user.get_username }}
+                                        {{ change.user }}
                                         {% if change.user.get_full_name %} ({{ change.user.get_full_name }}){% endif %}
                                     {% else %}
                                         &mdash;

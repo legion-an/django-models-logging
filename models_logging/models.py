@@ -1,9 +1,10 @@
 import json
 
-from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, USE_POSTGRES, JSON_ENCODER
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.functions import Cast
+
+from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, USE_POSTGRES, JSON_ENCODER
 
 if USE_POSTGRES:
     from django.contrib.postgres.fields import JSONField
@@ -104,11 +105,15 @@ class Change(models.Model):
                 except rel_model.related_model.DoesNotExist:
                     continue
             elif isinstance(rel_model, models.ManyToOneRel):
-                values = getattr(obj, rel_model.get_accessor_name()).all().values_list('pk', flat=True)
+                values = getattr(obj, rel_model.get_accessor_name()).annotate(
+                    pk_str=Cast('pk', output_field=models.TextField())
+                ).values_list('pk_str', flat=True)
             elif isinstance(rel_model, models.ForeignKey):
                 values = [getattr(obj, rel_model.get_attname())]
             elif isinstance(rel_model, models.ManyToManyField):
-                values = getattr(obj, rel_model.get_attname()).all().values_list('pk', flat=True)
+                values = getattr(obj, rel_model.get_attname()).annotate(
+                    pk_str=Cast('pk', output_field=models.TextField())
+                ).values_list('pk_str', flat=True)
             else:
                 continue
 

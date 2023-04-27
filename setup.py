@@ -4,7 +4,7 @@ files = ["templates/models_logging/*", "migrations/*", "management/commands/*"]
 
 setup(
     name='django-models-logging',
-    version='1.0.8',
+    version='1.0.9',
     packages=['models_logging'],
     url='https://github.com/legion-an/django-models-logging',
     package_data={'models_logging' : files},
@@ -19,7 +19,7 @@ setup(
         'django history models',
     ],
     install_requires=[
-        "django>=2.0",
+        "django>=2.0,<3",
         "python-dateutil",
     ],
     classifiers=[
@@ -31,7 +31,6 @@ setup(
         'Framework :: Django :: 1.10',
         'Framework :: Django :: 1.11',
         'Framework :: Django :: 2.0',
-        'Framework :: Django :: 3.0',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',

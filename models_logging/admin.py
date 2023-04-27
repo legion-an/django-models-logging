@@ -68,13 +68,18 @@ class ChangeAdmin(admin.ModelAdmin):
         return '%s: %s' % (obj.action, obj.object_repr)
 
     def get_link_admin_object(self, obj):
-        if obj.object and obj.content_type.model_class() in admin.site._registry:
-            return format_html('<a href="%s">%s</a>' % (
-                reverse('admin:%s_%s_change' % (obj.content_type.app_label, obj.content_type.model),
-                        args=[obj.object_id]
-                ),
-                obj.object)
-            )
+        try:
+            if obj.object_id and obj.content_type.model_class() in admin.site._registry:
+                return format_html('<a href="%s">%s</a>' % (
+                        reverse(
+                            'admin:%s_%s_change' % (obj.content_type.app_label, obj.content_type.model),
+                            args=[obj.object_id]
+                        ),
+                        obj.object_repr
+                    )
+                )
+        except AttributeError:
+            return None
 
     def has_add_permission(self, request):
         return
