@@ -1,15 +1,15 @@
 import json
 
-from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, JSON_ENCODER_PATH
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.utils.module_loading import import_string
-
 from django.db import models, transaction
+from django.db.models.functions import Cast
 from django.urls import reverse
+from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 from six import python_2_unicode_compatible
+
+from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, JSON_ENCODER_PATH
 
 
 def get_encoder(*args, **kwargs):
@@ -101,11 +101,15 @@ class Change(models.Model):
                 except rel_model.related_model.DoesNotExist:
                     continue
             elif isinstance(rel_model, models.ManyToOneRel):
-                values = getattr(obj, rel_model.get_accessor_name()).all().values_list('pk', flat=True)
+                values = getattr(obj, rel_model.get_accessor_name()).annotate(
+                    pk_str=Cast('pk', output_field=models.TextField())
+                ).values_list('pk_str', flat=True)
             elif isinstance(rel_model, models.ForeignKey):
                 values = [getattr(obj, rel_model.get_attname())]
             elif isinstance(rel_model, models.ManyToManyField):
-                values = getattr(obj, rel_model.get_attname()).all().values_list('pk', flat=True)
+                values = getattr(obj, rel_model.get_attname()).annotate(
+                    pk_str=Cast('pk', output_field=models.TextField())
+                ).values_list('pk_str', flat=True)
             else:
                 continue
 
@@ -113,6 +117,7 @@ class Change(models.Model):
                 {'content_type_id': ContentType.objects.get_for_model(rel_model.related_model).id,
                  'values': values}
             )
+
         qobj = models.Q()
         for v in history_objects:
             qobj.add(models.Q(content_type_id=v['content_type_id'], object_id__in=v['values']), models.Q.OR)
