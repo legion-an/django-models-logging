@@ -37,7 +37,7 @@ class _Local(local):
             from models_logging.models import Change
 
             user = self.request.user
-            return user.pk if user and type(user) == Change.user_field_model() and user.is_authenticated else None
+            return user.pk if user and isinstance(user, Change.user_field_model()) and user.is_authenticated else None
 
     def put_change_to_stack(self, change: "Change"):
         key = (change.object_id, change.content_type.pk)
