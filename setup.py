@@ -4,7 +4,7 @@ files = ["templates/models_logging/*", "migrations/*", "management/commands/*"]
 
 setup(
     name='django-models-logging',
-    version='2.3',
+    version='2.3.1',
     packages=['models_logging'],
     url='https://github.com/legion-an/django-models-logging',
     package_data={'models_logging' : files},
