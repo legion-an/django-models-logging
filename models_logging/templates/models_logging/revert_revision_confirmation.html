@@ -34,7 +34,7 @@
             <td>{{ change.content_type }}</td>
             <td>{{ change.object_id }}</td>
             <td>
-              {% for data in change.display_changed_data %}
+              {% for data in change.changed_data %}
                 <p>{{ data.field }} - ({{ data.values.old }} -> {{ data.values.new }})</p>
               {% endfor %}
             </td>

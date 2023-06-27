@@ -1,4 +1,3 @@
-import json
 from functools import update_wrapper
 
 from django.urls import reverse
@@ -120,7 +119,7 @@ class ChangeAdmin(admin.ModelAdmin):
             'object': obj,
             'opts': self.model._meta,
             'object_name': obj.object_repr,
-            'changed_data': json.loads(obj.changed_data),
+            'changed_data': obj.changed_data,
         }
         context.update(extra_context or {})
         return render(request, self.revert_form_template, context)
