@@ -44,7 +44,7 @@
                                     {{ change.action }}
                                 </td>
                                 <td>
-                                    {% for field, values in change.display_changed_data.items %}
+                                    {% for field, values in change.changed_data.items %}
                                         <p>{{ field }}: {{ values.old }} -> {{ values.new }}</p>
                                     {% endfor %}
                                 </td>

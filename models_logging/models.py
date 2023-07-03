@@ -1,5 +1,3 @@
-import json
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
@@ -125,7 +123,7 @@ class Change(models.Model):
 
     def revert(self):
         with transaction.atomic():
-            data = {field: values.get('old') for field, values in self.display_changed_data().items()}
+            data = {field: values.get('old') for field, values in self.changed_data.items()}
             if self.action == ADDED:
                 self.object.delete()
             elif self.action == CHANGED:
@@ -141,11 +139,6 @@ class Change(models.Model):
 
     def get_admin_url(self):
         return reverse('admin:models_logging_change_change', args=[self.id])
-
-    def display_changed_data(self):
-        if isinstance(self.changed_data, str):
-            return json.loads(self.changed_data)
-        return self.changed_data
 
     @classmethod
     def user_field_model(cls):
