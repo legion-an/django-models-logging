@@ -75,6 +75,9 @@ def init_change(
     object_repr = object_repr or force_str(object)
     object_pk = object["pk"] if isinstance(object, dict) else object.pk
 
+    if isinstance(object, Change.user_field_model()) and object_pk == _local.user_id and action == settings.DELETED:
+        _local.request = None
+
     return Change(
         db=settings.LOGGING_DATABASE,
         object_repr=object_repr,
