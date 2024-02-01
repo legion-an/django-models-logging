@@ -10,14 +10,16 @@ from models_logging.models import Change, Revision
 
 def model_to_dict(instance, action=None):
     opts = instance._meta
-    ignore_fields = getattr(instance, "LOGGING_IGNORE_FIELDS", [])
+    ignore_fields = set(getattr(instance, "LOGGING_IGNORE_FIELDS", []))
     only_fields = getattr(instance, "LOGGING_ONLY_FIELDS", [])
-    if action != settings.DELETED and only_fields:
-        fnames = [f.attname for f in opts.fields if f.name in only_fields]
-    elif action != settings.DELETED and ignore_fields:
-        fnames = [f.attname for f in opts.fields if f.name not in ignore_fields]
-    else:
-        fnames = [f.attname for f in opts.fields]
+    if action != settings.DELETED:
+        ignore_fields.update(instance.get_deferred_fields())
+
+    fnames = [
+        f.attname for f in opts.fields
+        if f.name not in ignore_fields and f.attname not in ignore_fields and not only_fields or f.name in only_fields
+    ]
+
     data = {f: getattr(instance, f, None) for f in fnames}
     return data
 
