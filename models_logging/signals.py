@@ -42,3 +42,17 @@ def _create_changes(object, action):
         _local.put_change_to_stack(change)
     else:
         change.save(using=LOGGING_DATABASE)
+
+
+def update_model_attrs(signal, sender, instance, **kwargs):
+    if not _local.ignore(sender, instance):
+        # if there are deferred fields which are changed still, we need to get old values from the DB
+        if instance.get_deferred_fields():
+            new_values = model_to_dict(instance)
+            if missed_fields := (set(new_values).difference(instance.__attrs)):
+                instance.refresh_from_db(fields=missed_fields)
+                for k in missed_fields:
+                    # Update __attrs with fields from the DB (old values)
+                    instance.__attrs[k] = getattr(instance, k)
+                    # set new values again
+                    setattr(instance, k, new_values[k])
