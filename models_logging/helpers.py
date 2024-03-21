@@ -1,3 +1,4 @@
+import copy
 from typing import Union, List
 
 from django.db.models.base import ModelBase
@@ -20,7 +21,13 @@ def model_to_dict(instance, action=None):
         if f.name not in ignore_fields and f.attname not in ignore_fields and not only_fields or f.name in only_fields
     ]
 
-    data = {f: getattr(instance, f, None) for f in fnames}
+    data = {}
+    for f in fnames:
+        fvalue = getattr(instance, f, None)
+        if isinstance(fvalue, (list, dict)):
+            fvalue = copy.deepcopy(fvalue)
+
+        data[f] = fvalue
     return data
 
 
