@@ -226,7 +226,7 @@ class RevisionAdmin(FastObjectsCountAdminModel):
     change_form_template = 'models_logging/change_form.html'
     revert_form_template = 'models_logging/revert_revision_confirmation.html'
     readonly_fields = ['comment']
-    search_fields = ['=id', '=changes__id']
+    search_fields = ['=id', '=change__id']
 
     def get_queryset(self, request):
         return super(RevisionAdmin, self).get_queryset(request).prefetch_related('change_set')
