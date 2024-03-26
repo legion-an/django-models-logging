@@ -25,10 +25,6 @@ class _Local(local):
             return True
         elif self.ignore_changes is True:
             return True
-        elif instance.get_deferred_fields():
-            # if we do not ignore defered_fields
-            # we will catch exception (max recursion depth)
-            return True
         return False
 
     @property
