@@ -45,6 +45,7 @@ class Change(models.Model):
         ordering = ("-pk",)
         verbose_name = _('Changes of object')
         verbose_name_plural = _('All changes')
+        index_together = ('content_type', 'object_id')
 
     ACTIONS = (
         (ADDED, _("Added")),
@@ -57,7 +58,7 @@ class Change(models.Model):
     user = models.ForeignKey(LOGGING_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL,
                              verbose_name=_("User"), help_text=_("The user who created this changes."))
     object_id = models.TextField(
-        help_text=_("Primary key of the model under version control.")
+        help_text=_("Primary key of the model under version control."),
     )
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
                                      help_text="Content type of the model under version control.")
@@ -76,50 +77,39 @@ class Change(models.Model):
         return "Changes %s of %s <%s>" % (self.id, self.object_repr, self.date_created.strftime('%Y-%m-%d %H:%M:%S.%f'))
 
     @staticmethod
-    def get_changes_by_obj(model, obj_id, related_objects='__all__'):
+    def get_changes_by_obj(obj, related_models):
         """
         get changes of object by model and obj
-        :param model: class of models.Model
-        :param obj_id: pk
-        :param related_objects: can be "__all__" or list of models, if __all__ take changes of related objects to model
-        by default related_objects is OneToOne or ManyToOne relations, but
-        expressions for ForeignKey and ManyToMany added if related_objects is some like this
-         [m for m in self.model._meta.get_fields() if m.is_relation]
+        :param obj: instance of tracked Model
+        :param related_models: list of related models
         :return: queryset of Changes
         """
 
-        obj = model.objects.get(pk=obj_id)
-        history_objects = [{'content_type_id': ContentType.objects.get_for_model(model).id, 'values': [obj_id]}]
-        if related_objects == '__all__':
-            related_objects = model._meta.related_objects
-        for rel_model in related_objects:
+        base_qs = Change.objects.select_related("user")
+        changes_qs = base_qs.filter(content_type=ContentType.objects.get_for_model(obj.__class__), object_id=obj.pk)
+        for rel_model in related_models:
             if isinstance(rel_model, models.OneToOneRel):
                 try:
-                    values = [getattr(obj, rel_model.get_accessor_name()).pk]
+                    changes_qs = changes_qs.union(
+                        base_qs.filter(
+                            content_type=ContentType.objects.get_for_model(rel_model.related_model),
+                            object_id=getattr(obj, rel_model.get_accessor_name()).pk
+                        )
+                    )
                 except rel_model.related_model.DoesNotExist:
                     continue
             elif isinstance(rel_model, models.ManyToOneRel):
-                values = getattr(obj, rel_model.get_accessor_name()).annotate(
+                rel_objects_qs = getattr(obj, rel_model.get_accessor_name()).annotate(
                     pk_str=Cast('pk', output_field=models.TextField())
-                ).values_list('pk_str', flat=True)
-            elif isinstance(rel_model, models.ForeignKey):
-                values = [getattr(obj, rel_model.get_attname())]
-            elif isinstance(rel_model, models.ManyToManyField):
-                values = getattr(obj, rel_model.get_attname()).annotate(
-                    pk_str=Cast('pk', output_field=models.TextField())
-                ).values_list('pk_str', flat=True)
-            else:
-                continue
+                ).values('pk_str')
+                changes_qs = changes_qs.union(
+                    base_qs.filter(
+                        content_type=ContentType.objects.get_for_model(rel_model.related_model),
+                        object_id__in=rel_objects_qs
+                    )
+                )
 
-            history_objects.append(
-                {'content_type_id': ContentType.objects.get_for_model(rel_model.related_model).id,
-                 'values': values}
-            )
-
-        qobj = models.Q()
-        for v in history_objects:
-            qobj.add(models.Q(content_type_id=v['content_type_id'], object_id__in=v['values']), models.Q.OR)
-        return Change.objects.filter(qobj).select_related('user')
+        return changes_qs.order_by('date_created')
 
     def revert(self):
         with transaction.atomic():

@@ -9,4 +9,4 @@ class LoggingConfig(AppConfig):
 
     def ready(self):
         from .setup import models_register
-        models_register()
+        self.registered_models = models_register()
