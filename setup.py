@@ -4,7 +4,7 @@ files = ["templates/models_logging/*", "migrations/*", "management/commands/*"]
 
 setup(
     name='django-models-logging',
-    version='2.4a3',
+    version='2.4',
     packages=['models_logging'],
     url='https://github.com/legion-an/django-models-logging',
     package_data={'models_logging' : files},
@@ -19,7 +19,7 @@ setup(
         'django history models',
     ],
     install_requires=[
-        "django>=3.1",
+        "django>=3.1,<5",
         "python-dateutil",
     ],
     classifiers=[
