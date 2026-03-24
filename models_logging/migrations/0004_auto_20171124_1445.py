@@ -6,15 +6,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('models_logging', '0003_auto_20170726_1552'),
+        ("models_logging", "0003_auto_20170726_1552"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='change',
-            name='object_id',
-            field=models.IntegerField(help_text='Primary key of the model under version control.'),
+            model_name="change",
+            name="object_id",
+            field=models.IntegerField(
+                help_text="Primary key of the model under version control."
+            ),
         ),
     ]
