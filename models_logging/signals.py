@@ -1,8 +1,8 @@
 from django.contrib.contenttypes.models import ContentType
 
 from . import _local
-from .helpers import model_to_dict, get_changed_data, init_change
-from .settings import ADDED, CHANGED, DELETED, MERGE_CHANGES, LOGGING_DATABASE
+from .helpers import get_changed_data, init_change, model_to_dict
+from .settings import ADDED, CHANGED, DELETED, LOGGING_DATABASE, MERGE_CHANGES
 
 
 def init_model_attrs(sender, instance, **kwargs):
@@ -19,7 +19,7 @@ def save_model(sender, instance, using, **kwargs):
     if not _local.ignore(sender, instance):
         diffs = get_changed_data(instance)
         if diffs:
-            action = ADDED if kwargs.get('created') else CHANGED
+            action = ADDED if kwargs.get("created") else CHANGED
             _create_changes(instance, action)
 
 
@@ -35,7 +35,7 @@ def _create_changes(object, action):
         object,
         changed_data,
         action,
-        ContentType.objects.get_for_model(object._meta.model)
+        ContentType.objects.get_for_model(object._meta.model),
     )
 
     if MERGE_CHANGES and _local.merge_changes_allowed:

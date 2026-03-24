@@ -1,10 +1,10 @@
-from typing import Union, List
+from typing import List, Union
 
 from django.db.models.base import ModelBase
 from django.utils.encoding import force_str
 from django.utils.module_loading import import_string
 
-from models_logging import settings, _local
+from models_logging import _local, settings
 from models_logging.models import Change, Revision
 
 
@@ -75,7 +75,11 @@ def init_change(
     object_repr = object_repr or force_str(object)
     object_pk = object["pk"] if isinstance(object, dict) else object.pk
 
-    if isinstance(object, Change.user_field_model()) and object_pk == _local.user_id and action == settings.DELETED:
+    if (
+        isinstance(object, Change.user_field_model())
+        and object_pk == _local.user_id
+        and action == settings.DELETED
+    ):
         _local.request = None
 
     return Change(
