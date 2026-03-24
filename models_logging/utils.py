@@ -18,12 +18,11 @@ except ImproperlyConfigured:
 
 
 class ExtendedEncoder(DjangoJSONEncoder):
-
     def default(self, o):
         if GEOS_POINT and isinstance(o, Point):
-            return {'type': o.geom_type, 'coordinates': [*o.coords]}
+            return {"type": o.geom_type, "coordinates": [*o.coords]}
         if isinstance(o, FieldFile):
-            return getattr(o, 'name', None)
+            return getattr(o, "name", None)
         return super(ExtendedEncoder, self).default(o)
 
 
@@ -80,7 +79,8 @@ def create_changes_for_update(queryset, **fields):
     for pk, item in old_values.items():
         changed_data = {
             field: {"old": old_value, "new": new_values[pk][field]}
-            for field, old_value in item.items() if field != 'pk'
+            for field, old_value in item.items()
+            if field != "pk"
         }
         changes.append(
             init_change(

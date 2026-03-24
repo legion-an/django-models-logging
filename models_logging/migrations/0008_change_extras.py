@@ -6,7 +6,6 @@ import models_logging.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("models_logging", "0007_migrate_old_fields"),
     ]

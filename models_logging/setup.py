@@ -9,11 +9,11 @@ def models_register():
     registered_models = []
     if MODELS_FOR_LOGGING:
         for app in MODELS_FOR_LOGGING:
-            item = app.split('.')
+            item = app.split(".")
             if item[-1] in [app_config.label for app_config in apps.get_app_configs()]:
                 # If item is an app, register all models
                 for v in apps.get_app_config(item[-1]).models.values():
-                    if '%s.%s' % (app, v.__name__) not in MODELS_FOR_EXCLUDE:
+                    if "%s.%s" % (app, v.__name__) not in MODELS_FOR_EXCLUDE:
                         registered_models.append(v)
             else:
                 # If the item is a single model, register it

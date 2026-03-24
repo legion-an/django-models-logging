@@ -17,8 +17,12 @@ def model_to_dict(instance, action=None):
         ignore_fields.update(instance.get_deferred_fields())
 
     fnames = [
-        f.attname for f in opts.fields
-        if f.name not in ignore_fields and f.attname not in ignore_fields and not only_fields or f.name in only_fields
+        f.attname
+        for f in opts.fields
+        if f.name not in ignore_fields
+        and f.attname not in ignore_fields
+        and not only_fields
+        or f.name in only_fields
     ]
 
     data = {}
@@ -84,7 +88,11 @@ def init_change(
     object_repr = object_repr or force_str(object)
     object_pk = object["pk"] if isinstance(object, dict) else object.pk
 
-    if isinstance(object, Change.user_field_model()) and object_pk == _local.user_id and action == settings.DELETED:
+    if (
+        isinstance(object, Change.user_field_model())
+        and object_pk == _local.user_id
+        and action == settings.DELETED
+    ):
         _local.request = None
 
     return Change(

@@ -12,7 +12,6 @@ from .utils import create_revision_with_changes
 
 
 class LoggingStackMiddleware(MiddlewareMixin):
-
     def process_request(self, request):
         _local.stack_changes = {}
         _local.request = request
