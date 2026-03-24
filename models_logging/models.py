@@ -83,12 +83,6 @@ class Change(models.Model):
         help_text="Content type of the model under version control.",
     )
     object = GenericForeignKey(ct_field="content_type", fk_field="object_id")
-    # TODO: db is not used yet
-    db = models.CharField(
-        max_length=191,
-        help_text=_("The database the model under version control is stored in."),
-    )
-
     changed_data = models.JSONField(blank=True, null=True, encoder=get_encoder)
 
     object_repr = models.TextField(

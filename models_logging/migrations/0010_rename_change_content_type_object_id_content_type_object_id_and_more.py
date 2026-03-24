@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
         migrations.RenameIndex(
             model_name="change",
             new_name="models_content_type_object_id",
-            old_name="content_type_object_id",
+            old_fields=("content_type", "object_id"),
         ),
         migrations.AlterField(
             model_name="change",
@@ -36,5 +36,9 @@ class Migration(migrations.Migration):
                 db_index=True,
                 help_text="Primary key of the model under version control.",
             ),
+        ),
+        migrations.RemoveField(
+            model_name="change",
+            name="db",
         ),
     ]
