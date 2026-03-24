@@ -5,7 +5,6 @@ from django.db.models.functions import Cast
 from django.urls import reverse
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
-from six import python_2_unicode_compatible
 
 from .settings import ADDED, CHANGED, DELETED, LOGGING_USER_MODEL, JSON_ENCODER_PATH
 
@@ -15,7 +14,6 @@ def get_encoder(*args, **kwargs):
     return encoder_cls(*args, **kwargs)
 
 
-@python_2_unicode_compatible
 class Revision(models.Model):
     """A group of related changes."""
 
@@ -48,13 +46,17 @@ class Revision(models.Model):
             ch.revert()
 
 
-@python_2_unicode_compatible
 class Change(models.Model):
     class Meta:
         ordering = ("-pk",)
         verbose_name = _("Changes of object")
         verbose_name_plural = _("All changes")
-        index_together = ("content_type", "object_id")
+        indexes = [
+            models.Index(
+                fields=("content_type", "object_id"),
+                name="models_content_type_object_id",
+            ),
+        ]
 
     ACTIONS = ((ADDED, _("Added")), (CHANGED, _("Changed")), (DELETED, _("Deleted")))
 
@@ -73,7 +75,7 @@ class Change(models.Model):
         help_text=_("The user who created this changes."),
     )
     object_id = models.TextField(
-        help_text=_("Primary key of the model under version control."),
+        help_text=_("Primary key of the model under version control."), db_index=True
     )
     content_type = models.ForeignKey(
         ContentType,
@@ -81,12 +83,6 @@ class Change(models.Model):
         help_text="Content type of the model under version control.",
     )
     object = GenericForeignKey(ct_field="content_type", fk_field="object_id")
-    # TODO: db is not used yet
-    db = models.CharField(
-        max_length=191,
-        help_text=_("The database the model under version control is stored in."),
-    )
-
     changed_data = models.JSONField(blank=True, null=True, encoder=get_encoder)
 
     object_repr = models.TextField(
@@ -100,7 +96,11 @@ class Change(models.Model):
         on_delete=models.CASCADE,
     )
     action = models.CharField(
-        _("Action"), choices=ACTIONS, help_text=_("added|changed|deleted"), max_length=7
+        _("Action"),
+        choices=ACTIONS,
+        help_text=_("added|changed|deleted"),
+        max_length=7,
+        db_index=True,
     )
     extras = models.JSONField(blank=True, default=dict, encoder=get_encoder, null=True)
 

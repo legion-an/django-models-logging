@@ -22,10 +22,6 @@ DELETED = "deleted"
 
 MIDDLEWARES = settings.MIDDLEWARE
 
-# TODO: Is not completed feature, do not use it!
-#  It will prevent error in database if User is not in the same database (because of ForeignKey)
-LOGGING_DATABASE = getattr(settings, "LOGGING_DATABASE", "default")
-
 JSON_ENCODER_PATH = getattr(
     settings, "LOGGING_JSON_ENCODER", "models_logging.utils.ExtendedEncoder"
 )

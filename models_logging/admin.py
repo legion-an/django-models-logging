@@ -39,12 +39,15 @@ class ChangeListWithFastCount(ChangeList):
 
     def fast_count(self):
         if not (self.query.group_by or self.query.where or self.query.distinct):
-            cursor = connection.cursor()
-            cursor.execute(
-                "SELECT reltuples FROM pg_class WHERE relname = %s",
-                [self.query.model._meta.db_table],
-            )
-            return int(cursor.fetchone()[0])
+            if connection.vendor == "postgresql":
+                cursor = connection.cursor()
+                cursor.execute(
+                    "SELECT reltuples FROM pg_class WHERE relname = %s",
+                    [self.query.model._meta.db_table],
+                )
+                row = cursor.fetchone()
+                if row and row[0] >= 0:
+                    return int(row[0])
         return self.query.get_count(using=self.queryset.db)
 
 
