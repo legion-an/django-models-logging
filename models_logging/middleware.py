@@ -1,29 +1,30 @@
 from django.conf import settings
 from django.utils.module_loading import import_string
 
-try:
-    from django.utils.deprecation import MiddlewareMixin
-except ImportError:
-    MiddlewareMixin = object
-
-from . import _local
-from .settings import MERGE_CHANGES
-from .utils import create_revision_with_changes
+from models_logging import _local
+from models_logging.settings import MERGE_CHANGES
+from models_logging.utils import create_revision_with_changes
 
 
-class LoggingStackMiddleware(MiddlewareMixin):
-    def process_request(self, request):
+class LoggingStackMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
         _local.stack_changes = {}
         _local.request = request
         _local.merge_changes_allowed = MERGE_CHANGES_ALLOWED
 
-    def process_response(self, request, response):
+        response = self.get_response(request)
+
         if MERGE_CHANGES and _local.stack_changes:
             self.create_revision(_local)
+
         return response
 
-    def create_revision(self, _local):
-        # this method for overriding and call create_revision_with_changes async maybe
+    @staticmethod
+    def create_revision(_local):
+        # use a dedicated method to be able to override it and call create_revision_with_changes async
 
         create_revision_with_changes(_local.stack_changes.values())
         _local.stack_changes = {}
@@ -31,8 +32,10 @@ class LoggingStackMiddleware(MiddlewareMixin):
 
 MERGE_CHANGES_ALLOWED = False
 for middleware in settings.MIDDLEWARE:
-    middleware_cls = import_string(middleware)(object)
+    middleware_cls = import_string(middleware)
 
-    if isinstance(middleware_cls, LoggingStackMiddleware):
+    if isinstance(middleware_cls, type) and issubclass(
+        middleware_cls, LoggingStackMiddleware
+    ):
         MERGE_CHANGES_ALLOWED = True
         break

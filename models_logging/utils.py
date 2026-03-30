@@ -13,7 +13,7 @@ try:
     from django.contrib.gis.geos import Point
 
     GEOS_POINT = True
-except ImproperlyConfigured:
+except (ImproperlyConfigured, OSError):
     GEOS_POINT = False
 
 
@@ -96,6 +96,6 @@ def create_changes_for_update(queryset, **fields):
         for change in changes:
             _local.put_change_to_stack(change)
     else:
-        Change.objects.using(settings.LOGGING_DATABASE).bulk_create(changes)
+        Change.objects.bulk_create(changes)
 
     return rows

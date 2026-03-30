@@ -2,7 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from . import _local
 from .helpers import model_to_dict, get_changed_data, init_change
-from .settings import ADDED, CHANGED, DELETED, MERGE_CHANGES, LOGGING_DATABASE
+from .settings import ADDED, CHANGED, DELETED, MERGE_CHANGES
 
 
 def init_model_attrs(sender, instance, **kwargs):
@@ -12,7 +12,7 @@ def init_model_attrs(sender, instance, **kwargs):
         if not instance.pk:
             model_dict = {k: None for k, v in model_dict.items()}
 
-        instance.__attrs = model_dict
+        instance._logging_attrs = model_dict
 
 
 def save_model(sender, instance, using, **kwargs):
@@ -41,7 +41,7 @@ def _create_changes(object, action):
     if MERGE_CHANGES and _local.merge_changes_allowed:
         _local.put_change_to_stack(change)
     else:
-        change.save(using=LOGGING_DATABASE)
+        change.save()
 
 
 def update_model_attrs(signal, sender, instance, **kwargs):
@@ -49,10 +49,10 @@ def update_model_attrs(signal, sender, instance, **kwargs):
         # if there are deferred fields which are changed still, we need to get old values from the DB
         if instance.get_deferred_fields():
             new_values = model_to_dict(instance)
-            if missed_fields := (set(new_values).difference(instance.__attrs)):
+            if missed_fields := (set(new_values).difference(instance._logging_attrs)):
                 instance.refresh_from_db(fields=missed_fields)
                 for k in missed_fields:
-                    # Update __attrs with fields from the DB (old values)
-                    instance.__attrs[k] = getattr(instance, k)
+                    # Update _logging_attrs with fields from the DB (old values)
+                    instance._logging_attrs[k] = getattr(instance, k)
                     # set new values again
                     setattr(instance, k, new_values[k])
