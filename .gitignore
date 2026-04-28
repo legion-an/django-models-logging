@@ -64,5 +64,7 @@ target/
 example
 
 venv/
+.venv
 /testapp/db.sqlite3
 /testapp/testapp/settings_local.py
+/uv.lock
