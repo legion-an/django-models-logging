@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import MiddlewareNotUsed
 from django.utils.module_loading import import_string
 
 try:
@@ -31,7 +32,10 @@ class LoggingStackMiddleware(MiddlewareMixin):
 
 MERGE_CHANGES_ALLOWED = False
 for middleware in settings.MIDDLEWARE:
-    middleware_cls = import_string(middleware)(object)
+    try:
+        middleware_cls = import_string(middleware)(object)
+    except MiddlewareNotUsed:
+        continue
 
     if isinstance(middleware_cls, LoggingStackMiddleware):
         MERGE_CHANGES_ALLOWED = True

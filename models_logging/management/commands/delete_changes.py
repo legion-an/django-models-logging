@@ -1,8 +1,10 @@
-from datetime import datetime
+from datetime import timedelta
 
 from django.core.management.base import BaseCommand
+from django.db.models import Exists, OuterRef
+from django.utils import timezone
 
-from models_logging.models import Change
+from models_logging.models import Change, Revision
 
 
 class Command(BaseCommand):
@@ -18,24 +20,30 @@ class Command(BaseCommand):
             help="ids by comma of content_types which will be excluded from deletion",
         )
         parser.add_argument(
-            "--date_lte",
-            type=str,
-            help="The changes started before that date will be removed, format (yyyy.mm.dd)",
+            "--older-than",
+            type=int,
+            help="The changes older than N days",
         )
 
     def handle(self, *args, **options):
         content_type = options["ctype"]
-        date_lte = options["date_lte"]
-        exclude = options["exclude"]
+        older_than = options["older_than"]
+        ctype_exclude = options["ctype_exclude"]
 
         changes = Change.objects.all()
         if content_type:
             changes = changes.filter(content_type__id__in=content_type.split(","))
-        if exclude:
-            changes = changes.exclude(content_type__id__in=exclude.split(","))
-        if date_lte:
+        if ctype_exclude:
+            changes = changes.exclude(content_type__id__in=ctype_exclude.split(","))
+        if older_than:
             changes = changes.filter(
-                date_created__lte=datetime.strptime(date_lte, "%Y.%m.%d")
+                date_created__lte=timezone.now() - timedelta(older_than)
             )
 
-        changes.delete()
+        deleted = changes._raw_delete("default")
+        self.stdout.write(f"{deleted} Changes have been deleted")
+
+        deleted = Revision.objects.filter(
+            ~Exists(Change.objects.filter(revision_id=OuterRef("pk")))
+        )._raw_delete("default")
+        self.stdout.write(f"{deleted} Revisions have been deleted")
