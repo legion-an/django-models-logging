@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.core.management.base import BaseCommand
+from django.db.models import Exists, OuterRef
 from django.utils import timezone
 
 from models_logging.models import Change, Revision
@@ -42,5 +43,7 @@ class Command(BaseCommand):
         deleted = changes._raw_delete("default")
         self.stdout.write(f"{deleted} Changes have been deleted")
 
-        deleted = Revision.objects.filter(change__isnull=True)._raw_delete("default")
+        deleted = Revision.objects.filter(
+            ~Exists(Change.objects.filter(revision_id=OuterRef("pk")))
+        )._raw_delete("default")
         self.stdout.write(f"{deleted} Revisions have been deleted")
