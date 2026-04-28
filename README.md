@@ -131,8 +131,6 @@ You can implement your own JSONEncoder and set path to it in django settings
 LOGGING_JSON_ENCODER = 'path.to.your.JsonEncoder'
 ```
 
-> Version > 1.0 is incompatible with old versions (requires django >= 2.0)
-> For django <= 2.0 use 0.9.7 version
-> Version > 2.0 is incompatible with old versions (requires django >= 3.1, <5)
+> This Version is compatible with Django >3.1, <=4.1
 
 PS: This module is not optimal as a backup for your database. If you try to recover thousands of changes this will be very slow.
